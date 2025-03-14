@@ -23,35 +23,27 @@ public class Epic extends Task {
     }
 
     public void updateStatus(TaskManager taskManager) {
+        List<Subtask> subtasks = taskManager.getSubtaskByEpicId(this.getId());
         if (subtaskIds.isEmpty()) {
-            setStatus(Status.NEW);
-            return;
-        }
-
-        boolean allDone = true;
-        boolean allNew = true;
-
-        for (int subtaskId : subtaskIds) {
-            Task subtask = taskManager.getTask(subtaskId);
-            if (subtask == null) {
-                System.out.println("Подзадача с ID " + subtaskId + " не найдена.");
-                allDone = false;
-                allNew = false;
-                continue;
-            }
-            if (subtask.getStatus() != Status.DONE) {
-                allDone = false;
-            }
-            if  (subtask.getStatus() != Status.NEW) {
-                allNew = false;
-            }
-        }
-        if (allDone) {
-            setStatus(Status.DONE);
-        } else if (allNew) {
-            setStatus(Status.NEW);
+            this.setStatus(Status.NEW);
         } else {
-            setStatus(Status.IN_PROGRESS);
+            boolean allDone = true;
+            boolean anyInProgress = false;
+            for (Subtask subtask : subtasks) {
+                if (subtask.getStatus() == Status.NEW) {
+                    anyInProgress = true;
+                } else if (subtask.getStatus() != Status.DONE) {
+                    allDone = false;
+                    anyInProgress = true;
+                }
+            }
+            if (allDone) {
+                this.setStatus(Status.DONE);
+            } else if (anyInProgress) {
+                this.setStatus(Status.IN_PROGRESS);
+            } else {
+                this.setStatus(Status.NEW);
+            }
         }
     }
 
