@@ -8,8 +8,9 @@ public class Main {
         tm.addTask(task2);
         System.out.println(tm.getAllTasks());
 
-        Epic epic1 = new Epic("Epic 1", "Description 1", Status.NEW);
+        Epic epic1 = new Epic("Epic 1", "Description 1");
         tm.addEpic(epic1);
+        epic1.updateStatus();
         System.out.println(tm.getAllEpics());
         Subtask sub1 = new Subtask("Subtask 1", "Description 1", Status.NEW,  epic1.getId());
         tm.addSubtask(sub1);
@@ -17,7 +18,7 @@ public class Main {
         tm.addSubtask(sub2);
         System.out.println(tm.getAllSubtasks());
 
-        Epic epic2 = new Epic("Epic 2", "Description 2", Status.IN_PROGRESS);
+        Epic epic2 = new Epic("Epic 2", "Description 2");
         tm.addEpic(epic2);
         System.out.println(tm.getAllEpics());
         Subtask sub3 = new Subtask("Subtask 3", "Description 3", Status.IN_PROGRESS, epic2.getId());
