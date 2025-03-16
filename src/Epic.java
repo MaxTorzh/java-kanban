@@ -2,57 +2,59 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Epic extends Task {
+    private List<Subtask> subtasks;
 
-    private List<Integer> subtaskIds; //список идентификаторов подзадач
-
-    public Epic(String title, String description, int id, Status status) {
-        super(title, description, id, status);
-        this.subtaskIds = new ArrayList<>();
+    public Epic(String title, String description, Status status) {
+        super(title, description, status);
+        this.subtasks = new ArrayList<>();
     }
 
-    public List<Integer> getSubtasksIds() {
-        return subtaskIds;
+    public List<Subtask> getSubtasks() {
+        return subtasks;
     }
 
-    public void setSubtasksIds(List<Integer> subtasksIds) {
-        this.subtaskIds = subtasksIds;
+    public void setSubtasks(List<Subtask> subtasks) {
+        this.subtasks = subtasks;
     }
 
-    public void addSubtaskId(int subtaskId) {
-        subtaskIds.add(subtaskId);
+    public void addSubtask(Subtask subtask) {
+        subtask.setEpicId(getId());
+        this.subtasks.add(subtask);
     }
 
-    public void updateStatus(TaskManager taskManager) {
-        List<Subtask> subtasks = taskManager.getSubtaskByEpicId(this.getId());
-        if (subtaskIds.isEmpty()) {
-            this.setStatus(Status.NEW);
+    public void updateStatus() {
+        if (subtasks.isEmpty()) {
+            setStatus(Status.NEW);
+            return;
+            // Если у epic нет подзадач, то статус = NEW
+        }
+        boolean isAllDone = true;
+        boolean isAllNew = true;
+        for (Subtask subtask : subtasks) {
+            if (subtask.getStatus() != Status.DONE) {
+                isAllDone = false;
+            }
+            if (subtask.getStatus() != Status.NEW) {
+                isAllNew = false;
+            }
+        }
+        if (isAllDone) {
+            setStatus(Status.DONE);
+            // Если у epic все подзадачи DONE, то статус = DONE
+        } else if (isAllNew) {
+            setStatus(Status.NEW);
+            // Если у epic все подзадачи NEW, то статус = NEW
         } else {
-            boolean allDone = true;
-            boolean anyInProgress = false;
-            for (Subtask subtask : subtasks) {
-                if (subtask.getStatus() == Status.NEW) {
-                    anyInProgress = true;
-                } else if (subtask.getStatus() != Status.DONE) {
-                    allDone = false;
-                    anyInProgress = true;
-                }
-            }
-            if (allDone) {
-                this.setStatus(Status.DONE);
-            } else if (anyInProgress) {
-                this.setStatus(Status.IN_PROGRESS);
-            } else {
-                this.setStatus(Status.NEW);
-            }
+            setStatus(Status.IN_PROGRESS);
+            // Если у epic подзадачи DONE и NEW, то статус = IN_PROGRESS
         }
     }
 
     @Override
     public String toString() {
         return "Epic{" +
-                "subtaskIds=" + subtaskIds +
                 ", " + super.toString() +
+                "subtasks=" + subtasks +
                 '}';
     }
 }
-

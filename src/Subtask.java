@@ -1,9 +1,8 @@
 public class Subtask extends Task {
+    private int epicId;
 
-    private int epicId; // идентификатор эпика, к которому относится подзадача
-
-    public Subtask(String title, String description, int id, Status status, int epicId) {
-        super(title, description, id, status);
+    public Subtask(String title, String description, Status status, int epicId) {
+        super(title, description, status);
         this.epicId = epicId;
     }
 
@@ -18,8 +17,8 @@ public class Subtask extends Task {
     @Override
     public String toString() {
         return "Subtask{" +
-                "epicId=" + epicId +
                 ", " + super.toString() +
+                "epicId=" + epicId +
                 '}';
     }
 }
