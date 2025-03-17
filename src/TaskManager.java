@@ -37,8 +37,8 @@ public class TaskManager {
 
     public void deleteAllSubtasks() {
         subtasks.clear();
-        for (Epic epic : epics.values()) { // Перебор всех эпиков
-            epic.getSubtasks().clear(); // Очистка списка подзадач у каждого эпика
+        for (Epic epic : epics.values()) { // Перебор всех значений в мапе эпика
+            epic.getSubtaskIds().clear(); // Очистка списка подзадач у каждого эпика
         }
     }
 
@@ -69,13 +69,14 @@ public class TaskManager {
         subtasks.put(subtask.getId(), subtask); // Добавление подзадачи в мапу
         Epic epic = epics.get(subtask.getEpicId()); // Получение эпика по идентификатору
         if (epic != null) { // Если эпик существует
-            epic.addSubtask(subtask); // Добавление подзадачи в список подзадач у эпика
+            epic.addSubtask(subtask.getId()); // Добавление подзадачи в список подзадач у эпика
             epic.updateStatus(); // Обновление статуса эпика
         }
     }
 
     public void addEpic(Epic epic) {
-        epic.setId(generateId()); // Установка уникального идентификатора
+        epic.setId(generateId());// Установка уникального идентификатора
+        epic.setTaskManager(this); // Ссылка на менеджер задач у эпика, чтобы избежать NullPointerException и чтобы не трогать конструктор
         epics.put(epic.getId(), epic); // Добавление эпика в мапу
     }
 
@@ -105,7 +106,9 @@ public class TaskManager {
             int epicId = subtask.getEpicId(); // Получение идентификатора эпика
             Epic epic = epics.get(epicId); // Получение эпика по идентификатору
             if (epic != null) { // Если эпик существует
-                epic.getSubtasks().remove(subtask); // Удаление подзадачи из списка подзадач у эпика
+                if (epic.getSubtaskIds().contains(id)) { // Если подзадача принадлежит эпику
+                    epic.getSubtaskIds().remove(Integer.valueOf(id)); // Удаление подзадачи по значению, а не по индексу
+                }
                 epic.updateStatus(); // Обновление статуса эпика
             }
         }
@@ -115,15 +118,25 @@ public class TaskManager {
     public void deleteEpicById(int id) {
         Epic epic = epics.get(id); // Получение эпика по идентификатору
         if (epic != null) { // Если эпик существует
-            List<Subtask> subtaskToDelete = new ArrayList<>(getAllSubtasksByEpicId(id)); // Получение всех подзадач эпика
-            for (Subtask subtask : subtaskToDelete) {
-                deleteSubtaskById(subtask.getId()); // Удаление подзадачи
+            for (Integer subtaskId : epic.getSubtaskIds()) { // Перебор всех id подзадач
+                deleteSubtaskById(subtaskId); // Удаление подзадач по id из эпика
             }
         }
         epics.remove(id); // Удаление эпика из мапы
     }
 
-    public List<Subtask> getAllSubtasksByEpicId(int epicId) {
-        return epics.get(epicId).getSubtasks(); // Получение всех подзадач эпика
+    public List<Subtask> getAllSubtasksByEpicId(int epicId) { // Метод для получения всех подзадач по id эпика
+        Epic epic = epics.get(epicId); // Получение эпика по id
+        if (epic == null) { // Если эпик не существует
+            return new ArrayList<>(); // Возврат пустого списка
+        }
+        List<Subtask> result = new ArrayList<>(); // Создание списка для результата
+        for (Integer subtaskId : epic.getSubtaskIds()) { // Перебор всех id подзадач
+            Subtask subtask = subtasks.get(subtaskId); // Получение подзадачи по id
+            if (subtask != null) { // Если подзадача существует
+                result.add(subtask); // Добавление подзадачи в список
+            }
+        }
+        return result; // Возврат списка подзадач
     }
 }

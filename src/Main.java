@@ -20,6 +20,7 @@ public class Main {
 
         Epic epic2 = new Epic("Epic 2", "Description 2");
         tm.addEpic(epic2);
+        epic2.updateStatus();
         System.out.println(tm.getAllEpics());
         Subtask sub3 = new Subtask("Subtask 3", "Description 3", Status.IN_PROGRESS, epic2.getId());
         tm.addSubtask(sub3);
@@ -30,10 +31,10 @@ public class Main {
         System.out.println(tm.getAllTasks());
 
         sub1.setStatus(Status.DONE);
-        sub2.setStatus(Status.IN_PROGRESS);
+        sub2.setStatus(Status.DONE);
         tm.updateSubtask(sub1);
         tm.updateSubtask(sub2);
-        sub3.setStatus(Status.DONE);
+        sub3.setStatus(Status.IN_PROGRESS);
         tm.updateSubtask(sub3);
         System.out.println(tm.getAllSubtasks());
         System.out.println(tm.getAllEpics());
