@@ -1,7 +1,7 @@
 public class Main {
 
     public static void main(String[] args) {
-        TaskManager tm = new TaskManager();
+        InMemoryTaskManager tm = new InMemoryTaskManager();
         Task task1 = new Task("Task 1", "Description 1", Status.NEW);
         tm.addTask(task1);
         Task task2 = new Task("Task 2", "Description 2", Status.IN_PROGRESS);
