@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -46,5 +48,20 @@ public class Main {
         System.out.println(tm.getAllTasks());
         System.out.println(tm.getAllSubtasks());
         System.out.println(tm.getAllEpics());
+
+        tm.getTaskById(task1.getId());
+        tm.getTaskById(task2.getId());
+        tm.getSubtaskById(sub1.getId());
+        tm.getEpicById(epic1.getId());
+
+        List<Task> history = tm.getHistory();
+        System.out.println("История содержит " + history.size() + " элементов.");
+        for (Task task : history) {
+            if (task != null) {
+            System.out.println("- " + task.getTitle());
+        } else {
+                System.out.println("- Deleted task " + task.getId());
+            }
+        }
     }
 }
