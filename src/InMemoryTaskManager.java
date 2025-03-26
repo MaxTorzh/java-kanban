@@ -7,16 +7,13 @@ public class InMemoryTaskManager implements TaskManager {
     private HashMap<Integer, Task> tasks;
     private HashMap<Integer, Subtask> subtasks;
     private HashMap<Integer, Epic> epics;
+    private final HistoryManager historyManager = Managers.getDefaultHistory();
 
     public InMemoryTaskManager() {
         this.idCounter = 1;
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
-    }
-
-    public List<Task> getHistory() {
-        return new ArrayList<>(); // Получение истории. Возврат копии списка, для защиты от изменений
     }
 
     @Override
@@ -39,12 +36,10 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(epics.values()); // Получение всех эпиков. Возврат копии списка, аналог tasks
     }
 
-    @Override
     public void deleteAllTasks() {
         tasks.clear();
     }
 
-    @Override
     public void deleteAllSubtasks() {
         subtasks.clear();
         for (Epic epic : epics.values()) { // Перебор всех значений в мапе эпика
@@ -52,23 +47,19 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    @Override
     public void deleteAllEpics() {
         epics.clear();
         subtasks.clear();
     }
 
-    @Override
     public Task getTaskById(int id) {
         return tasks.get(id);
     }
 
-    @Override
     public Subtask getSubtaskById(int id) {
         return subtasks.get(id);
     }
 
-    @Override
     public Epic getEpicById(int id) {
         return epics.get(id);
     }
@@ -140,7 +131,6 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    @Override
     public void updateEpic(Epic epic) {
         epics.put(epic.getId(), epic);
     }
