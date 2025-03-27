@@ -4,9 +4,9 @@ import java.util.List;
 
 public class InMemoryTaskManager implements TaskManager {
     private int idCounter;
-    private HashMap<Integer, Task> tasks;
-    private HashMap<Integer, Subtask> subtasks;
-    private HashMap<Integer, Epic> epics;
+    private final HashMap<Integer, Task> tasks;
+    private final HashMap<Integer, Subtask> subtasks;
+    private final HashMap<Integer, Epic> epics;
     private final HistoryManager historyManager = Managers.getDefaultHistory();
 
     public InMemoryTaskManager() {
