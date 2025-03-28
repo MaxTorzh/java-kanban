@@ -81,12 +81,12 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Task> getHistory() {
-        return historyManager.getHistory();
+        return historyManager.getHistory(); // Делегирует вызов истории
     }
 
     @Override
     public void addTask(Task task) {
-        if(task.getId() == 0) {
+        if(task.getId() == 0) { // Если задача не имеет идентификатора
             task.setId(generateId()); // Установка уникального идентификатора
         }
         tasks.put(task.getId(), task); // Добавление задачи в мапу
@@ -94,7 +94,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addSubtask(Subtask subtask) {
-        if (subtask.getId() == 0) {
+        if (subtask.getId() == 0) { // Если подзадача не имеет идентификатора
             subtask.setId(generateId()); // Установка уникального идентификатора
         }
         if (subtask.getEpicId() == subtask.getId()) { // Если подзадача является эпиком для себя
@@ -110,9 +110,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addEpic(Epic epic) {
-        if (epic.getId() == 0) {
-            epic.setId(generateId());// Установка уникального идентификатора
-        }
+        if (epic.getId() == 0) { // Если эпик не имеет идентификатора
+        epic.setId(generateId());// Установка уникального идентификатора
+            }
         epics.put(epic.getId(), epic); // Добавление эпика в мапу
     }
 

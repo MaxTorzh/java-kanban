@@ -39,6 +39,10 @@ public class Main {
         tm.getSubtaskById(sub1.getId());
         tm.getSubtaskById(sub2.getId());
         tm.getSubtaskById(sub3.getId());
+        tm.getTaskById(task1.getId());
+        tm.getTaskById(task1.getId());
+        tm.getTaskById(task1.getId());
+        tm.getTaskById(task1.getId());
 
         printAllTasks(tm);
     }
