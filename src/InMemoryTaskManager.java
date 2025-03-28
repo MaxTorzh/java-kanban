@@ -93,6 +93,9 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void addSubtask(Subtask subtask) {
         subtask.setId(generateId()); // Установка уникального идентификатора
+        if (subtask.getEpicId() == subtask.getId()) { // Если подзадача является эпиком для себя
+            throw new IllegalArgumentException("Подзадача не может быть эпиком для себя");
+        }
         subtasks.put(subtask.getId(), subtask); // Добавление подзадачи в мапу
         Epic epic = epics.get(subtask.getEpicId()); // Получение эпика по идентификатору
         if (epic != null) { // Если эпик существует
