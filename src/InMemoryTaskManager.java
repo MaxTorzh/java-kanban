@@ -86,13 +86,17 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addTask(Task task) {
-        task.setId(generateId()); // Установка уникального идентификатора
+        if(task.getId() == 0) {
+            task.setId(generateId()); // Установка уникального идентификатора
+        }
         tasks.put(task.getId(), task); // Добавление задачи в мапу
     }
 
     @Override
     public void addSubtask(Subtask subtask) {
-        subtask.setId(generateId()); // Установка уникального идентификатора
+        if (subtask.getId() == 0) {
+            subtask.setId(generateId()); // Установка уникального идентификатора
+        }
         if (subtask.getEpicId() == subtask.getId()) { // Если подзадача является эпиком для себя
             throw new IllegalArgumentException("Подзадача не может быть эпиком для себя");
         }
@@ -106,7 +110,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addEpic(Epic epic) {
-        epic.setId(generateId());// Установка уникального идентификатора
+        if (epic.getId() == 0) {
+            epic.setId(generateId());// Установка уникального идентификатора
+        }
         epics.put(epic.getId(), epic); // Добавление эпика в мапу
     }
 
