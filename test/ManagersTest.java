@@ -12,15 +12,15 @@ public class ManagersTest {
 
     @Test
     void getDefaultHistoryReturnsInitializedHistory() {
-        HistoryManager historyManager = Managers.getDefaultHistory();
-        assertNotNull(historyManager);
-        assertTrue(historyManager.getHistory().isEmpty());
+        HistoryManager historyManager = Managers.getDefaultHistory(); // Возвращает историю, которая инициализирована
+        assertNotNull(historyManager); // Метод не возвращает null
+        assertTrue(historyManager.getHistory().isEmpty()); // История пустая, только что созданная
     }
 
     @Test
     void getDefaultTaskManagerIsInitialized() {
-        TaskManager tm = Managers.getDefault();
-        assertNotNull(tm);
-        assertTrue(tm.getAllTasks().isEmpty());
+        TaskManager tm = Managers.getDefault(); // Возвращает менеджер задач, который инициализирован
+        assertNotNull(tm); // Метод не возвращает null
+        assertTrue(tm.getAllTasks().isEmpty()); // Менеджер задач пустой, только что созданный
     }
 }
