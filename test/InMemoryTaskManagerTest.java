@@ -13,9 +13,9 @@ class InMemoryTaskManagerTest {
         tm.addSubtask(subtask);
         tm.addEpic(epic);
 
-        assertEquals(task, tm.getTaskById(task.getId()));
-        assertEquals(subtask, tm.getSubtaskById(subtask.getId()));
-        assertEquals(epic, tm.getEpicById(epic.getId()));
+        assertEquals(task, tm.getTaskById(task.getId())); // По id должна вернуться та же задача, что и была добавлена
+        assertEquals(subtask, tm.getSubtaskById(subtask.getId())); // Здесь тоже
+        assertEquals(epic, tm.getEpicById(epic.getId())); // И здесь
     }
 
     @Test
@@ -24,22 +24,22 @@ class InMemoryTaskManagerTest {
         Task task1 = new Task("Task1", "Desc1", Status.NEW);
         tm.addTask(task1);
 
-        assertEquals(task1, tm.getTaskById(task1.getId()));
+        assertEquals(task1, tm.getTaskById(task1.getId())); // По id должна вернуться та же задача, что и была добавлена
     }
 
     @Test
     void taskUnchangedAfterAdding() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
         Subtask sub1 = new Subtask("Sub1", "Desc1", Status.NEW, 1);
-        sub1.setId(777);
-        tm.addSubtask(sub1);
-        Subtask sub2 = tm.getSubtaskById(sub1.getId());
+        sub1.setId(777); // Создание подзадачи с фиксированным id
+        tm.addSubtask(sub1); // Добавление подзадачи
+        Subtask sub2 = tm.getSubtaskById(sub1.getId()); // Возвращение ссылки на тот же объект, что и был добавлен
 
         assertEquals(sub1.getTitle(), sub2.getTitle());
         assertEquals(sub1.getDescription(), sub2.getDescription());
         assertEquals(sub1.getStatus(), sub2.getStatus());
         assertEquals(sub1.getEpicId(), sub2.getEpicId());
-        assertEquals(sub1.getId(), sub2.getId());
+        assertEquals(sub1.getId(), sub2.getId()); // Все поля сохранились без изменений
     }
 
     @Test
@@ -47,8 +47,8 @@ class InMemoryTaskManagerTest {
         InMemoryTaskManager tm = new InMemoryTaskManager();
         Task task1 = new Task("Task1", "Desc1", Status.NEW);
         Task task2 = new Task("Task2", "Desc2", Status.NEW);
-        tm.addTask(task1);
-        tm.addTask(task2);
-        assertEquals(task1.getId() + 1, task2.getId());
+        tm.addTask(task1); // id = 1, счетчик начинается с 1
+        tm.addTask(task2); // id = 2
+        assertEquals(task1.getId() + 1, task2.getId()); // id второй задачи должен быть на 1 больше первого
     }
 }
