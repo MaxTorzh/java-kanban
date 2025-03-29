@@ -8,9 +8,8 @@ public class InMemoryHistoryManagerTest {
 
     @Test
     void historyKeepsPreviousTaskVersions() {
-        HistoryManager hm = new InMemoryHistoryManager(); // Реализация интерфейса HistoryManager
-        Managers.setHistoryManager(hm); // Устанавливаем историю, как "глобальную", чтобы все операции использовали этот экземпляр
-        InMemoryTaskManager tm = new InMemoryTaskManager();
+        HistoryManager hm = new InMemoryHistoryManager();
+        InMemoryTaskManager tm = new InMemoryTaskManager(hm); // Связываем историю с менеджером
 
         Task initialTask = new Task("Task", "Desc", Status.NEW);
         tm.addTask(initialTask);

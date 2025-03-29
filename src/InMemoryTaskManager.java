@@ -7,17 +7,21 @@ public class InMemoryTaskManager implements TaskManager {
     private final HashMap<Integer, Task> tasks;
     private final HashMap<Integer, Subtask> subtasks;
     private final HashMap<Integer, Epic> epics;
-    private final HistoryManager historyManager = Managers.getDefaultHistory();
+    private final HistoryManager historyManager;
 
-    public InMemoryTaskManager() {
+    public InMemoryTaskManager(HistoryManager historyManager) {
         this.idCounter = 1;
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
+        this.historyManager = historyManager;
     }
 
-    @Override
-    public int generateId() {
+    public InMemoryTaskManager() {
+        this(Managers.getDefaultHistory()); // Делегируем к конструктору выше
+    }
+
+    private int generateId() { // Так как это внутренний счетчик класса, то метод должен быть приватный
         return idCounter++; // Создание счетчика идентификаторов
     }
 
@@ -36,10 +40,12 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(epics.values()); // Получение всех эпиков. Возврат копии списка, аналог tasks
     }
 
+    @Override
     public void deleteAllTasks() {
         tasks.clear();
     }
 
+    @Override
     public void deleteAllSubtasks() {
         subtasks.clear();
         for (Epic epic : epics.values()) { // Перебор всех значений в мапе эпика
@@ -47,6 +53,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
+    @Override
     public void deleteAllEpics() {
         epics.clear();
         subtasks.clear();
@@ -81,22 +88,18 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Task> getHistory() {
-        return historyManager.getHistory(); // Делегирует вызов истории
+        return new ArrayList<>(historyManager.getHistory()); // Делегирует вызов истории, возвращаем копию списка
     }
 
     @Override
     public void addTask(Task task) {
-        if(task.getId() == 0) { // Если задача не имеет идентификатора
-            task.setId(generateId()); // Автоматическая установка уникального идентификатора
-        }
+        task.setId(generateId()); // Автоматическая установка уникального идентификатора
         tasks.put(task.getId(), task); // Добавление задачи в мапу
     }
 
     @Override
     public void addSubtask(Subtask subtask) {
-        if (subtask.getId() == 0) { // Если подзадача не имеет идентификатора
-            subtask.setId(generateId()); // Автоматическая установка уникального идентификатора
-        }
+        subtask.setId(generateId()); // Автоматическая установка уникального идентификатора
         if (subtask.getEpicId() == subtask.getId()) { // Если подзадача является эпиком для себя
             throw new IllegalArgumentException("Подзадача не может быть эпиком для себя");
         }
@@ -110,9 +113,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addEpic(Epic epic) {
-        if (epic.getId() == 0) { // Если эпик не имеет идентификатора
         epic.setId(generateId());// Автоматическая установка уникального идентификатора
-            }
         epics.put(epic.getId(), epic); // Добавление эпика в мапу
     }
 

@@ -30,8 +30,7 @@ class InMemoryTaskManagerTest {
     @Test
     void taskUnchangedAfterAdding() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
-        Subtask sub1 = new Subtask("Sub1", "Desc1", Status.NEW, 1);
-        sub1.setId(777); // Создание подзадачи с фиксированным id
+        Subtask sub1 = new Subtask("Sub1", "Desc1", Status.NEW, 2);
         tm.addSubtask(sub1); // Добавление подзадачи
         Subtask sub2 = tm.getSubtaskById(sub1.getId()); // Возвращение ссылки на тот же объект, что и был добавлен
 
