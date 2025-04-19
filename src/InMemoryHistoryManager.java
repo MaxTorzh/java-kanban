@@ -44,11 +44,11 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     private List<Task> getTask() {
-        List<Task> task = new ArrayList<>();
-        Node current = head;
-        while (current != null) {
-            task.add(current.task);
-            current = current.next;
+        List<Task> task = new ArrayList<>(); // Создание списка для задач
+        Node current = head; // Задается текущим head
+        while (current != null) { // Пока текущий узел не null
+            task.add(current.task); // В список задач добавляется текущая задача
+            current = current.next; // Переход к следующему узлу
         }
         return task;
     }
