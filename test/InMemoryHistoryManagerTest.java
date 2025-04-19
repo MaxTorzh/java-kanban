@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class InMemoryHistoryManagerTest {
 
     @Test
-    void historyKeepsPreviousTaskVersions() {
+    void historyKeepsPreviousTaskVersions() { // Тест на сохранение предыдущей версии
         HistoryManager hm = new InMemoryHistoryManager();
         InMemoryTaskManager tm = new InMemoryTaskManager(hm); // Связываем историю с менеджером
 
@@ -27,7 +27,7 @@ public class InMemoryHistoryManagerTest {
     }
 
     @Test
-    void testOrderOfTasks() {
+    void testOrderOfTasks() { // Тест на порядок в истории
         HistoryManager hm = new InMemoryHistoryManager();
         Task task1 = new Task("Task1", "Desc", Status.NEW);
         task1.setId(1);
@@ -44,7 +44,7 @@ public class InMemoryHistoryManagerTest {
     }
 
     @Test
-    void testRemoveTask() {
+    void testRemoveTask() { // Тест на удаление
         HistoryManager hm = new InMemoryHistoryManager();
         Task task = new Task("Task", "Desc", Status.NEW);
         hm.add(task);
@@ -53,13 +53,13 @@ public class InMemoryHistoryManagerTest {
     }
 
     @Test
-    void testEmptyHistory() {
+    void testEmptyHistory() { // Тест на пустую историю
         HistoryManager hm = new InMemoryHistoryManager();
         assertEquals(0, hm.getHistory().size());
     }
 
     @Test
-    void testNoDuplicatesSameId() {
+    void testNoDuplicatesSameId() { // Тест на отсутствие дубликатов
         HistoryManager hm = new InMemoryHistoryManager();
         Task task1 = new Task("Task1", "Desc", Status.NEW);
         task1.setId(1);
@@ -72,5 +72,22 @@ public class InMemoryHistoryManagerTest {
         List<Task> history = hm.getHistory();
         assertEquals(1, history.size()); // Только task2
         assertEquals(task2, history.get(0));
+    }
+
+    @Test
+    void lastViewIsAddedToTheEnd() { // Тест на добавление в конец истории
+        HistoryManager hm = new InMemoryHistoryManager();
+        Task task1 = new Task("Task1", "Desc1", Status.NEW);
+        Task task2 = new Task("Task2", "Desc2", Status.NEW);
+
+        task1.setId(1);
+        task2.setId(2);
+
+        hm.add(task1); // Добавляем первый просмотр
+        hm.add(task2); // Добавляем второй просмотр
+
+        List<Task> history = hm.getHistory();
+        assertEquals(2, history.size());
+        assertEquals(task2, history.get(1)); // Последний должен быть в конце
     }
 }
