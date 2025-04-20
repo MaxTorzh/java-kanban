@@ -13,7 +13,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         Node prev; // Ссылка на предыдущий узел
         Node next; // Ссылка на следующий узел
 
-        Node (Task task) {
+        Node(Task task) {
             this.task = task;
         }
     }
