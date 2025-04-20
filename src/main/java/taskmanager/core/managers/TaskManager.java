@@ -1,3 +1,6 @@
+package taskmanager.core.managers;
+
+import taskmanager.core.model.*;
 import java.util.List;
 
 public interface TaskManager {
