@@ -8,16 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
-    private static class Node {
-        Task task; // Хранимая задача
-        Node prev; // Ссылка на предыдущий узел
-        Node next; // Ссылка на следующий узел
-
-        Node(Task task) {
-            this.task = task;
-        }
-    }
-
     private final Map<Integer, Node> nodeMap = new LinkedHashMap<>(); // Хранит id задачи -> узел
     private Node head; // Первый элемент списка (изначально null)
     private Node tail; // Последний элемент списка (изначально null)
@@ -27,7 +17,6 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (task == null) {
             return;
         }
-        remove(task.getId()); // Удаление существующей задачи, если она есть
         Node newNode = new Node(task); // Создание нового узла
         linkLast(newNode);
         nodeMap.put(task.getId(), newNode); // Добавление нового узла в конец списка
@@ -38,16 +27,15 @@ public class InMemoryHistoryManager implements HistoryManager {
         Node node = nodeMap.get(id); // Поиск узел по id
         if (node != null) {
             removeNode(node); // Удаление узла из списка
-            nodeMap.remove(id); // Удаление записи из мапы
         }
     }
 
     @Override
     public List<Task> getHistory() {
-        return getTask(); // Возвращение задач в порядке просмотра
+        return getTasks(); // Возвращение задач в порядке просмотра
     }
 
-    private List<Task> getTask() {
+    private List<Task> getTasks() {
         List<Task> task = new ArrayList<>(); // Создание списка для задач
         Node current = head; // Задается текущим head
         while (current != null) { // Пока текущий узел не null
@@ -58,6 +46,7 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     private void linkLast(Node node) { // Добавление узла в конец списка
+        remove(node.task.getId()); // Удаление существующей задачи, если она есть
         if (head == null) { // Если список пуст
             head = node; // новый узел становится и head, и tail
             tail = node;
@@ -78,6 +67,17 @@ public class InMemoryHistoryManager implements HistoryManager {
             node.next.prev = node.prev;
         } else {
             tail = node.prev; // Если удален tail, сдвиг влево
+        }
+        nodeMap.remove(node.task.getId()); // Удаление записи из мапы
+    }
+
+    private static class Node {
+        Task task; // Хранимая задача
+        Node prev; // Ссылка на предыдущий узел
+        Node next; // Ссылка на следующий узел
+
+        Node(Task task) {
+            this.task = task;
         }
     }
 }
