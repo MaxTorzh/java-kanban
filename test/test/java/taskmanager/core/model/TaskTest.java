@@ -1,4 +1,7 @@
+package taskmanager.core.model;
+
 import org.junit.jupiter.api.Test;
+import taskmanager.core.util.Status;
 
 import static org.junit.jupiter.api.Assertions.*;
 

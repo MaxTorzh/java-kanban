@@ -1,3 +1,7 @@
+package taskmanager.core.model;
+
+import taskmanager.core.util.Status;
+
 public class Subtask extends Task {
     private int epicId;
 

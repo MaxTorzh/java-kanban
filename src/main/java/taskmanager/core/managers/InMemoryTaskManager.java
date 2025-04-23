@@ -1,3 +1,8 @@
+package taskmanager.core.managers;
+
+import taskmanager.core.model.*;
+import taskmanager.core.util.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -168,6 +173,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void deleteTaskById(int id) {
         tasks.remove(id); // Удаление задачи из мапы
+        historyManager.remove(id); // Удаление задачи из истории
     }
 
     @Override
@@ -184,6 +190,7 @@ public class InMemoryTaskManager implements TaskManager {
             }
         }
         subtasks.remove(id); // Удаление подзадачи из мапы
+        historyManager.remove(id); // Удаление подзадачи из истории
     }
 
     @Override
@@ -195,6 +202,7 @@ public class InMemoryTaskManager implements TaskManager {
             }
         }
         epics.remove(id); // Удаление эпика из мапы
+        historyManager.remove(id); // Удаление эпика из истории
     }
 
     @Override

@@ -1,4 +1,8 @@
+package taskmanager.core.model;
+
 import org.junit.jupiter.api.Test;
+import taskmanager.core.managers.InMemoryTaskManager;
+import taskmanager.core.util.Status;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
