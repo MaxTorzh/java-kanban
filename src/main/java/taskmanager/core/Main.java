@@ -2,48 +2,109 @@ package taskmanager.core;
 
 import taskmanager.core.managers.*;
 import taskmanager.core.model.*;
+import taskmanager.core.util.Status;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import static taskmanager.core.util.Status.*;
+import java.nio.file.Files;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            // Создание временного файла для тестирования
+            // 1. Проверка загрузки из пустого файла
+            File emptyFile = File.createTempFile("empty-task", ".csv");
+            System.out.println("Пустой файл создан: " + emptyFile.getAbsolutePath());
+
+            FileBackedTaskManager emptyManager = new FileBackedTaskManager(emptyFile.getAbsolutePath());
+
+            assert emptyManager.getAllTasks().isEmpty();
+            assert emptyManager.getAllEpics().isEmpty();
+            assert emptyManager.getAllSubtasks().isEmpty();
+
+            System.out.println("Проверка пустого файла успешна.");
+            emptyFile.deleteOnExit();
+
+            // 2. Сохранение и загрузка нескольких задач
             File tempFile = File.createTempFile("temp-task", ".csv");
             System.out.println("Временный файл создан: " + tempFile.getAbsolutePath());
+
             // Запись тестовых данных в файл
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
                 writer.write("id,type,name,status,description,epic\n");
                 writer.write("1,TASK,Task1,NEW,Description1,\n");
                 writer.write("2,TASK,Task2,IN_PROGRESS,Description2,\n");
-                writer.write("3,EPIC,Epic1,NEW,Description1,\n");
+                writer.write("3,EPIC,Epic1,IN_PROGRESS,Description1,\n");
                 writer.write("4,SUBTASK,Subtask1,NEW,Description1,3\n");
                 writer.write("5,SUBTASK,Subtask2,DONE,Description2,3\n");
             } catch (IOException e) {
                 System.out.println("Ошибка при записи во временный файл: " + e.getMessage());
-                return; //  Прерываем выполнение программы, если не удалось записать данные
+                return;
             }
-            // Создание первого менеджера и добавление задач
+
+            // Загрузка первого менеджера
             FileBackedTaskManager fm1 = new FileBackedTaskManager(tempFile.getAbsolutePath());
 
-            // Вывод состояния первого менеджера
+            // Вывод содержимого файла для проверки
+            System.out.println("Содержимое файла:");
+            System.out.println(Files.readString(tempFile.toPath()));
+
+            // Вывод состояния менеджера
             System.out.println("Состояние первого менеджера:");
             printAllTasks(fm1);
 
-            // Создание второго менеджера из того же файла
+            // Загрузка второго менеджера из того же файла
             FileBackedTaskManager fm2 = FileBackedTaskManager.loadFromFile(tempFile);
 
-            // Вывод состояния второго менеджера
             System.out.println("Состояние второго менеджера после загрузки из файла:");
             printAllTasks(fm2);
 
+            // 3. Проверка обработки дубликатов ID
+            File duplicateFile = File.createTempFile("duplicate-task", ".csv");
+            System.out.println("Файл с дубликатами создан: " + duplicateFile.getAbsolutePath());
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(duplicateFile))) {
+                writer.write("id,type,name,status,description,epic\n");
+                writer.write("1,TASK,Task1,NEW,Description1,\n");
+                writer.write("1,TASK,Task2,DONE,Description2,\n"); // Дубликат ID
+            } catch (IOException e) {
+                System.out.println("Ошибка при записи во временный файл: " + e.getMessage());
+                return;
+            }
+
+            FileBackedTaskManager duplicateManager = new FileBackedTaskManager(duplicateFile.getAbsolutePath());
+
+            assert duplicateManager.getAllTasks().size() == 1;
+            System.out.println("Проверка обработки дубликатов ID успешна.");
+            duplicateFile.deleteOnExit();
+
+            // 4. Проверка сохранения изменений
+            File updateFile = File.createTempFile("update-task", ".csv");
+            System.out.println("Файл для обновления создан: " + updateFile.getAbsolutePath());
+
+            FileBackedTaskManager updateManager = new FileBackedTaskManager(updateFile.getAbsolutePath());
+
+            Task task = new Task("TaskToUpdate", "Old Description");
+            updateManager.addTask(task);
+
+            // Обновление задачи
+            task.setDescription("New Description");
+            task.setStatus(Status.DONE);
+            updateManager.updateTask(task);
+
+            // Загрузка из файла
+            FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(updateFile);
+
+            Task loadedTask = loadedManager.getTaskById(task.getId());
+            assert loadedTask.getDescription().equals("New Description");
+            assert loadedTask.getStatus() == Status.DONE;
+
+            System.out.println("Проверка сохранения изменений успешна.");
+            updateFile.deleteOnExit();
+
             // Удаление временного файла после завершения
             tempFile.deleteOnExit();
+
         } catch (IOException e) {
             System.out.println("Ошибка при работе с файлом: " + e.getMessage());
         }
@@ -68,5 +129,6 @@ public class Main {
         for (Task subtask : manager.getAllSubtasks()) {
             System.out.println(subtask);
         }
+        System.out.println("-".repeat(115));
     }
 }

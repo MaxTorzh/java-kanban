@@ -6,8 +6,11 @@ import taskmanager.core.util.Status;
 import taskmanager.core.util.TaskType;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static taskmanager.core.util.Status.NEW;
 
@@ -28,27 +31,43 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private void loadFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
+        File file = new File(filePath);
+        if (!file.exists()) return;
+
+        Set<Integer> usedIds = new HashSet<>(); // Хранилище для уже использованных ID
+
+         try {
+            String content = Files.readString(file.toPath()); // Чтение всего содержимого файла
+            String[] lines = content.split("\\R"); // Разделение на строки (универсальный разделитель)
             boolean headerPassed = false;
 
-            while ((line = reader.readLine()) != null) {
-                System.out.println("Читаю строку: " + line); // Логирование строки
-                if (line.trim().isEmpty()) { // Пропуск пустых строк
-                    continue;
-                }
+            for (String line : lines) {
+                if (line.trim().isEmpty()) continue;
                 if (!headerPassed) {
-                    headerPassed = true; // Пропускаем первую строку (заголовок)
+                    headerPassed = true;
                     continue;
                 }
 
-                Task task = fromString(line);
-                if (task instanceof Epic) {
-                    addEpic((Epic) task);
-                } else if (task instanceof Subtask) {
-                    addSubtask((Subtask) task);
-                } else {
-                    addTask(task);
+                // Проверка, что строка начинается с числа (ID)
+                if (!line.matches("^\\d+.*")) continue;
+
+                try {
+                    Task task = fromString(line);
+                    if (usedIds.contains(task.getId())) {
+                        System.out.println("Пропускаю дубликат ID: " + task.getId());
+                        continue;
+                    }
+                    usedIds.add(task.getId());
+
+                    if (task instanceof Epic) {
+                        addEpic((Epic) task);
+                    } else if (task instanceof Subtask) {
+                        addSubtask((Subtask) task);
+                    } else {
+                        addTask(task);
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Некорректная строка: " + line + ". Пропуск.");
                 }
             }
         } catch (IOException e) {
@@ -66,14 +85,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             id = Integer.parseInt(fields[0]); // Преобразование ID в число
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Некорректный ID: " + fields[0]);
+            id = -1; // Используем значение по умолчанию, если ID отсутствует или некорректен
         }
 
         TaskType type;
         try {
             type = TaskType.valueOf(fields[1]); // Преобразование типа задачи
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Некорректный тип задачи: " + fields[1]);
+            type = TaskType.TASK; // Используем значение по умолчанию, если тип задачи отсутствует или некорректен
         }
 
         String title = fields[2]; // Извлечение третьего поля: название задачи
@@ -115,6 +134,31 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             default:
                 throw new IllegalArgumentException("Неизвестный тип задачи: " + type);
         }
+    }
+
+    private String[] parseCsvLine(String line) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder currentField = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (char c : line.toCharArray()) {
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                fields.add(currentField.toString().trim());
+                currentField.setLength(0);
+            } else {
+                currentField.append(c);
+            }
+        }
+        fields.add(currentField.toString().trim());
+
+        // Добавляем значения по умолчанию для недостающих полей
+        while (fields.size() < 6) {
+            fields.add("");
+        }
+
+        return fields.toArray(new String[0]);
     }
 
     /* Переопределенные методы:
@@ -179,48 +223,18 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write("id,type,name,status,description,epic\n");
             for (Task task : getAllTasks()) {
-                String taskString = toString(task);
-                System.out.println("Записываю задачу: " + taskString); // Логирование
-                writer.write(taskString + "\n");
+                writer.write(toString(task) + "\n");
             }
             for (Epic epic : getAllEpics()) {
-                String epicString = toString(epic);
-                System.out.println("Записываю эпик: " + epicString); // Логирование
-                writer.write(epicString + "\n");
+                writer.write(toString(epic) + "\n");
             }
             for (Subtask subtask : getAllSubtasks()) {
-                String subtaskString = toString(subtask);
-                System.out.println("Записываю подзадачу: " + subtaskString); // Логирование
-                writer.write(subtaskString + "\n");
+                writer.write(toString(subtask) + "\n");
             }
+            writer.flush(); // Гарантируется запись на диск
         } catch (IOException e) {
             throw new ManagerSaveException("Ошибка при записи в файл", e);
         }
-    }
-
-    private String[] parseCsvLine(String line) {
-        List<String> fields = new ArrayList<>();
-        StringBuilder currentField = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (char c : line.toCharArray()) {
-            if (c == '"') {
-                inQuotes = !inQuotes; // Переключаем режим кавычек
-            } else if (c == ',' && !inQuotes) {
-                fields.add(currentField.toString().trim());
-                currentField.setLength(0); // Очищаем буфер
-            } else {
-                currentField.append(c);
-            }
-        }
-        fields.add(currentField.toString().trim()); // Добавляем последнее поле
-
-        // Проверяем, что строка содержит минимум 5 полей
-        if (fields.size() < 5) {
-            throw new IllegalArgumentException("Некорректная строка: " + line);
-        }
-
-        return fields.toArray(new String[0]);
     }
 
     private String toString(Task task) {
@@ -234,11 +248,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 task.getStatus() != null ? task.getStatus() : NEW,
                 task.getDescription() != null ? task.getDescription() : "");
 
-        if (task instanceof Subtask) {
-            Subtask subtask = (Subtask) task;
-            return baseFormat + "," + subtask.getEpicId(); // Для подзадач добавляем epicId
-        }
-
-        return baseFormat + ","; // Для задач и эпиков добавляем запятую в конце
+        return task instanceof Subtask
+                ? baseFormat + "," + ((Subtask) task).getEpicId()
+                : baseFormat + ",";
     }
 }
