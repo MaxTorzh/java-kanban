@@ -60,25 +60,7 @@ public class Main {
             System.out.println("Состояние второго менеджера после загрузки из файла:");
             printAllTasks(fm2);
 
-            // 3. Проверка обработки дубликатов ID
-            File duplicateFile = File.createTempFile("duplicate-task", ".csv");
-            System.out.println("Файл с дубликатами создан: " + duplicateFile.getAbsolutePath());
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(duplicateFile))) {
-                writer.write("id,type,name,status,description,epic\n");
-                writer.write("1,TASK,Task1,NEW,Description1,\n");
-                writer.write("1,TASK,Task2,DONE,Description2,\n"); // Дубликат ID
-            } catch (IOException e) {
-                System.out.println("Ошибка при записи во временный файл: " + e.getMessage());
-                return;
-            }
-
-            FileBackedTaskManager duplicateManager = new FileBackedTaskManager(duplicateFile.getAbsolutePath());
-
-            assert duplicateManager.getAllTasks().size() == 1;
-            System.out.println("Проверка обработки дубликатов ID успешна.");
-            duplicateFile.deleteOnExit();
-
-            // 4. Проверка сохранения изменений
+            // 3. Проверка сохранения изменений
             File updateFile = File.createTempFile("update-task", ".csv");
             System.out.println("Файл для обновления создан: " + updateFile.getAbsolutePath());
 

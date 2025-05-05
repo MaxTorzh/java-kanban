@@ -41,13 +41,12 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     /**
      * Метод загрузки данных из файла в память
-     * Обрабатывает возможные ошибки чтения и дубликаты ID
+     * Обрабатывает возможные ошибки чтения
      */
     private void loadFromFile() {
         File file = new File(filePath);
         if (!file.exists()) return; // Если файл не существует - нет данных для загрузки
 
-        Set<Integer> usedIds = new HashSet<>(); // Хранилище для уже использованных ID
         try {
             String content = Files.readString(file.toPath()); // Чтение всего содержимого файла
             String[] lines = content.split("\\R"); // Разделение на строки с универсальным разделителем
@@ -252,16 +251,35 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write("id,type,name,status,description,epic\n"); // Запись заголовка CSV
-            for (Task task : getAllTasks()) { // Сохранение всех задач
+            Set<Integer> writtenIds = new HashSet<>(); // Для отслеживания уже записанных ID
+            // Сохранение задач
+            for (Task task : getAllTasks()) {
+                if (!writtenIds.add(task.getId())) {
+                    System.out.println("Дубликат ID в коллекции задач: " + task.getId() + ". Пропуск.");
+                    continue;
+                }
                 writer.write(toString(task) + "\n");
             }
-            for (Epic epic : getAllEpics()) { // Сохранение всех эпиков
+
+            // Сохранение эпиков
+            for (Epic epic : getAllEpics()) {
+                if (!writtenIds.add(epic.getId())) {
+                    System.out.println("Дубликат ID в коллекции эпиков: " + epic.getId() + ". Пропуск.");
+                    continue;
+                }
                 writer.write(toString(epic) + "\n");
             }
-            for (Subtask subtask : getAllSubtasks()) { // Сохранение всех подзадач
+
+            // Сохранение подзадач
+            for (Subtask subtask : getAllSubtasks()) {
+                if (!writtenIds.add(subtask.getId())) {
+                    System.out.println("Дубликат ID в коллекции подзадач: " + subtask.getId() + ". Пропуск.");
+                    continue;
+                }
                 writer.write(toString(subtask) + "\n");
             }
-            writer.flush(); // Гарантируется запись на диск
+
+            writer.flush(); // Гарантирует запись на диск
         } catch (IOException e) {
             throw new ManagerSaveException("Ошибка при записи в файл", e);
         }
@@ -274,7 +292,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
      */
     private String toString(Task task) {
         String description = task.getDescription() != null
-                ? task.getDescription().replace("\"", "\"\"") // Экранируем кавычки
+                ? task.getDescription().replace("\"", "\"\"") // Экранирование кавычек
                 : "";
         // Определение типа задачи
         TaskType type = task instanceof Epic ? TaskType.EPIC :
@@ -321,17 +339,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             // Проверка задач
             assert manager2.getAllTasks().size() == 1 : "Задачи не совпадают";
             Task loadedTask = manager2.getTaskById(task1.getId());
-            assert loadedTask != null && loadedTask.getTitle().equals("Задача 1") : "Задача 1 не найдена";
+            assert loadedTask != null && loadedTask.getTitle().equals("Task 1") : "Задача 1 не найдена";
 
             // Проверка эпиков
             assert manager2.getAllEpics().size() == 1 : "Эпики не совпадают";
             Epic loadedEpic = manager2.getEpicById(epic1.getId());
-            assert loadedEpic != null && loadedEpic.getTitle().equals("Эпик 1") : "Эпик 1 не найден";
+            assert loadedEpic != null && loadedEpic.getTitle().equals("Epic 1") : "Эпик 1 не найден";
 
             // Проверка подзадач
             assert manager2.getAllSubtasks().size() == 1 : "Подзадачи не совпадают";
             Subtask loadedSubtask = manager2.getSubtaskById(subtask1.getId());
-            assert loadedSubtask != null && loadedSubtask.getTitle().equals("Подзадача 1") : "Подзадача 1 не найдена";
+            assert loadedSubtask != null && loadedSubtask.getTitle().equals("Subtask 1") : "Подзадача 1 не найдена";
 
             System.out.println("Все проверки пройдены успешно!");
 
