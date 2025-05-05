@@ -10,10 +10,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 
+/**
+ * Основной класс приложения для тестирования функциональности менеджера задач.
+ * Содержит тесты для проверки работы с файлами и различных операций с задачами.
+ */
 public class Main {
     public static void main(String[] args) {
         try {
-            // 1. Проверка загрузки из пустого файла
+
+            /**
+             * Тест 1: Проверка работы с пустым файлом
+             * - Создание временного пустого файла
+             * - Проверка, что загруженные коллекции задач пусты
+             */
             File emptyFile = File.createTempFile("empty-task", ".csv");
             System.out.println("Пустой файл создан: " + emptyFile.getAbsolutePath());
 
@@ -26,7 +35,12 @@ public class Main {
             System.out.println("Проверка пустого файла успешна.");
             emptyFile.deleteOnExit();
 
-            // 2. Сохранение и загрузка нескольких задач
+            /**
+             * Тест 2: Сохранение и загрузка нескольких задач
+             * - Создание временного файла с тестовыми данными
+             * - Проверка корректности чтения данных из файла
+             * - Проверка дублированной загрузки из того же файла
+             */
             File tempFile = File.createTempFile("temp-task", ".csv");
             System.out.println("Временный файл создан: " + tempFile.getAbsolutePath());
 
@@ -60,7 +74,12 @@ public class Main {
             System.out.println("Состояние второго менеджера после загрузки из файла:");
             printAllTasks(fm2);
 
-            // 3. Проверка сохранения изменений
+            /**
+             * Тест 3: Проверка сохранения изменений
+             * - Создание файла для тестирования обновления данных
+             * - Добавление и последующее обновление задачи
+             * - Проверка корректности сохраненных изменений
+             */
             File updateFile = File.createTempFile("update-task", ".csv");
             System.out.println("Файл для обновления создан: " + updateFile.getAbsolutePath());
 
@@ -92,6 +111,11 @@ public class Main {
         }
     }
 
+    /**
+     * Вспомогательный метод для вывода всех задач из менеджера
+     *
+     * @param manager - менеджер задач, данные которого нужно вывести
+     */
     private static void printAllTasks(TaskManager manager) {
         System.out.println("Задачи:");
         for (Task task : manager.getAllTasks()) {
