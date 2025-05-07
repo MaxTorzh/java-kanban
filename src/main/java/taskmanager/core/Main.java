@@ -4,62 +4,118 @@ import taskmanager.core.managers.*;
 import taskmanager.core.model.*;
 import taskmanager.core.util.Status;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+
+/**
+ * Основной класс приложения для тестирования функциональности менеджера задач.
+ * Содержит тесты для проверки работы с файлами и различных операций с задачами.
+ */
 public class Main {
     public static void main(String[] args) {
-        InMemoryTaskManager tm = new InMemoryTaskManager();
-        Task task1 = new Task("Task 1", "Description 1", Status.NEW);
-        tm.addTask(task1);
-        Task task2 = new Task("Task 2", "Description 2", Status.IN_PROGRESS);
-        tm.addTask(task2);
+        try {
 
-        Epic epic1 = new Epic("Epic 1", "Description 1");
-        tm.addEpic(epic1);
-        tm.updateEpicStatus(epic1.getId());
-        Subtask sub1 = new Subtask("Subtask 1", "Description 1", Status.NEW,  epic1.getId());
-        tm.addSubtask(sub1);
-        Subtask sub2 = new Subtask("Subtask 2", "Description 2", Status.IN_PROGRESS, epic1.getId());
-        tm.addSubtask(sub2);
-        Subtask sub3 = new Subtask("Subtask 3", "Description 3", Status.IN_PROGRESS, epic1.getId());
-        tm.addSubtask(sub3);
+            /**
+             * Тест 1: Проверка работы с пустым файлом
+             * - Создание временного пустого файла
+             * - Проверка, что загруженные коллекции задач пусты
+             */
+            File emptyFile = File.createTempFile("empty-task", ".csv");
+            System.out.println("Пустой файл создан: " + emptyFile.getAbsolutePath());
 
-        Epic epic2 = new Epic("Epic 2", "Description 2");
-        tm.addEpic(epic2);
-        tm.updateEpicStatus(epic2.getId());
-        Subtask sub4 = new Subtask("Subtask 4", "Description 4", Status.DONE, epic2.getId());
-        tm.addSubtask(sub4);
+            FileBackedTaskManager emptyManager = new FileBackedTaskManager(emptyFile.getAbsolutePath());
 
-        task1.setStatus(Status.IN_PROGRESS);
-        tm.updateTask(task1);
-        sub1.setStatus(Status.DONE);
-        sub2.setStatus(Status.DONE);
-        tm.updateSubtask(sub1);
-        tm.updateSubtask(sub2);
-        sub3.setStatus(Status.IN_PROGRESS);
-        tm.updateSubtask(sub3);
+            assert emptyManager.getAllTasks().isEmpty();
+            assert emptyManager.getAllEpics().isEmpty();
+            assert emptyManager.getAllSubtasks().isEmpty();
 
-        tm.getTaskById(task1.getId());
-        tm.getTaskById(task2.getId());
-        tm.getEpicById(epic1.getId());
-        tm.getEpicById(epic2.getId());
-        tm.getSubtaskById(sub1.getId());
-        tm.getSubtaskById(sub2.getId());
-        tm.getSubtaskById(sub3.getId());
-        tm.getTaskById(task1.getId());
-        tm.getSubtaskById(sub2.getId());
-        tm.getEpicById(epic1.getId());
+            System.out.println("Проверка пустого файла успешна.");
+            emptyFile.deleteOnExit();
 
-        printAllTasks(tm);
+            /**
+             * Тест 2: Сохранение и загрузка нескольких задач
+             * - Создание временного файла с тестовыми данными
+             * - Проверка корректности чтения данных из файла
+             * - Проверка дублированной загрузки из того же файла
+             */
+            File tempFile = File.createTempFile("temp-task", ".csv");
+            System.out.println("Временный файл создан: " + tempFile.getAbsolutePath());
 
-        tm.deleteTaskById(2);
-        tm.deleteEpicById(3);
+            // Запись тестовых данных в файл
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                writer.write("id,type,name,status,description,epic\n");
+                writer.write("1,TASK,Task1,NEW,Description1,\n");
+                writer.write("2,TASK,Task2,IN_PROGRESS,Description2,\n");
+                writer.write("3,EPIC,Epic1,IN_PROGRESS,Description1,\n");
+                writer.write("4,SUBTASK,Subtask1,NEW,Description1,3\n");
+                writer.write("5,SUBTASK,Subtask2,DONE,Description2,3\n");
+            } catch (IOException e) {
+                System.out.println("Ошибка при записи во временный файл: " + e.getMessage());
+                return;
+            }
 
-        System.out.println(" ");
-        System.out.println("=".repeat(115));
-        System.out.println(" ");
+            // Загрузка первого менеджера
+            FileBackedTaskManager fm1 = new FileBackedTaskManager(tempFile.getAbsolutePath());
 
-        printAllTasks(tm);
+            // Вывод содержимого файла для проверки
+            System.out.println("Содержимое файла:");
+            System.out.println(Files.readString(tempFile.toPath()));
+
+            // Вывод состояния менеджера
+            System.out.println("Состояние первого менеджера:");
+            printAllTasks(fm1);
+
+            // Загрузка второго менеджера из того же файла
+            FileBackedTaskManager fm2 = FileBackedTaskManager.loadFromFile(tempFile);
+
+            System.out.println("Состояние второго менеджера после загрузки из файла:");
+            printAllTasks(fm2);
+
+            /**
+             * Тест 3: Проверка сохранения изменений
+             * - Создание файла для тестирования обновления данных
+             * - Добавление и последующее обновление задачи
+             * - Проверка корректности сохраненных изменений
+             */
+            File updateFile = File.createTempFile("update-task", ".csv");
+            System.out.println("Файл для обновления создан: " + updateFile.getAbsolutePath());
+
+            FileBackedTaskManager updateManager = new FileBackedTaskManager(updateFile.getAbsolutePath());
+
+            Task task = new Task("TaskToUpdate", "Old Description");
+            updateManager.addTask(task);
+
+            // Обновление задачи
+            task.setDescription("New Description");
+            task.setStatus(Status.DONE);
+            updateManager.updateTask(task);
+
+            // Загрузка из файла
+            FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(updateFile);
+
+            Task loadedTask = loadedManager.getTaskById(task.getId());
+            assert loadedTask.getDescription().equals("New Description");
+            assert loadedTask.getStatus() == Status.DONE;
+
+            System.out.println("Проверка сохранения изменений успешна.");
+            updateFile.deleteOnExit();
+
+            // Удаление временного файла после завершения
+            tempFile.deleteOnExit();
+
+        } catch (IOException e) {
+            System.out.println("Ошибка при работе с файлом: " + e.getMessage());
+        }
     }
 
+    /**
+     * Вспомогательный метод для вывода всех задач из менеджера
+     *
+     * @param manager - менеджер задач, данные которого нужно вывести
+     */
     private static void printAllTasks(TaskManager manager) {
         System.out.println("Задачи:");
         for (Task task : manager.getAllTasks()) {
@@ -79,11 +135,6 @@ public class Main {
         for (Task subtask : manager.getAllSubtasks()) {
             System.out.println(subtask);
         }
-
         System.out.println("-".repeat(115));
-        System.out.println("История:");
-        for (Task task : manager.getHistory()) {
-            System.out.println(task);
-        }
     }
 }

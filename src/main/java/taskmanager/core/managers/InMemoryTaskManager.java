@@ -13,6 +13,7 @@ public class InMemoryTaskManager implements TaskManager {
     private final HashMap<Integer, Subtask> subtasks;
     private final HashMap<Integer, Epic> epics;
     private final HistoryManager historyManager;
+    private boolean isUpdatingStatus = false; // Флаг для блокировки рекурсии
 
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.idCounter = 1;
@@ -124,31 +125,37 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateEpicStatus(int epicId) {
-        Epic epic = epics.get(epicId);
-        if (epic == null) {
-            return;
-        }
-        List<Subtask> actualSubtasks = getAllSubtasksByEpicId(epicId); // Получение списка актуальных подзадач
-        if (actualSubtasks.isEmpty()) { // Если список пустой, то статус = NEW
-            epic.setStatus(Status.NEW);
-            return;
-        }
-        boolean isAllDone = true; // Проверка, все ли подзадачи DONE
-        boolean isAllNew = true; // Проверка, все ли подзадачи NEW
-        for (Subtask subtask : actualSubtasks) { // Перебор всех актуальных подзадач
-            if (subtask.getStatus() != Status.DONE) { // Если статус подзадачи не DONE, то isAllDone = false
-                isAllDone = false;
+        if (isUpdatingStatus) return; // Блокировка повторного вызова
+        isUpdatingStatus = true;
+        try {
+            Epic epic = epics.get(epicId);
+            if (epic == null) {
+                return;
             }
-            if (subtask.getStatus() != Status.NEW) { // Если статус подзадачи не NEW, то isAllNew = false
-                isAllNew = false;
+            List<Subtask> actualSubtasks = getAllSubtasksByEpicId(epicId); // Получение списка актуальных подзадач
+            if (actualSubtasks.isEmpty()) { // Если список пустой, то статус = NEW
+                epic.setStatus(Status.NEW);
+                return;
             }
-        }
-        if (isAllDone) {
-            epic.setStatus(Status.DONE); // Если у epic все подзадачи DONE, то статус = DONE
-        } else if (isAllNew) {
-            epic.setStatus(Status.NEW); // Если у epic все подзадачи NEW, то статус = NEW
-        } else {
-            epic.setStatus(Status.IN_PROGRESS); // Если у epic подзадачи DONE и NEW, то статус = IN_PROGRESS
+            boolean isAllDone = true; // Проверка, все ли подзадачи DONE
+            boolean isAllNew = true; // Проверка, все ли подзадачи NEW
+            for (Subtask subtask : actualSubtasks) { // Перебор всех актуальных подзадач
+                if (subtask.getStatus() != Status.DONE) { // Если статус подзадачи не DONE, то isAllDone = false
+                    isAllDone = false;
+                }
+                if (subtask.getStatus() != Status.NEW) { // Если статус подзадачи не NEW, то isAllNew = false
+                    isAllNew = false;
+                }
+            }
+            if (isAllDone) {
+                epic.setStatus(Status.DONE); // Если у epic все подзадачи DONE, то статус = DONE
+            } else if (isAllNew) {
+                epic.setStatus(Status.NEW); // Если у epic все подзадачи NEW, то статус = NEW
+            } else {
+                epic.setStatus(Status.IN_PROGRESS); // Если у epic подзадачи DONE и NEW, то статус = IN_PROGRESS
+            }
+        } finally {
+            isUpdatingStatus = false;
         }
     }
 
@@ -166,6 +173,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
+    @Override
     public void updateEpic(Epic epic) {
         epics.put(epic.getId(), epic);
     }
