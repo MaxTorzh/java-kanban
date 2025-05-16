@@ -7,6 +7,10 @@ import taskmanager.core.util.TaskType;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 import static taskmanager.core.util.Status.NEW;
@@ -87,7 +91,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
      */
     private Task fromString(String value) {
         String[] fields = parseCsvLine(value); // Метод для корректного разбора CSV
-        if (fields.length < 5) { // Проверка на минимальное количество полей
+        if (fields.length < 7) { // Проверка на минимальное количество полей
             throw new IllegalArgumentException("Некорректная строка " + value);
         }
 
@@ -115,22 +119,43 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             }
         }
 
-        String description = fields.length > 4 ? fields[4] : "";
+        // Обработка экранирования кавычек
+        String description = fields[4].isEmpty() ? "" : fields[4].replace("\"\"", "\"");
+
+        // Парсинг времени и продолжительности
+        LocalDateTime startTime = null;
+        if (!fields[5].isEmpty()) { // Парсится только если поле не пустое
+            try {
+                startTime = LocalDateTime.parse(fields[5], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Некорректный формат времени: " + fields[5]);
+            }
+        }
+
+        Duration duration = null;
+        if (!fields[6].isEmpty()) { // Парсится только если поле не пустое
+            try {
+                duration = Duration.ofMinutes(Long.parseLong(fields[6]));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Некорректная продолжительность: " + fields[6]);
+            }
+        }
+
         int epicId = -1; // Обработка epicId для подзадач
         if (type == TaskType.SUBTASK) {
-            if (fields.length < 6 || fields[5].isEmpty()) {
+            if (fields.length < 8 || fields[7].isEmpty()) {
                 throw new IllegalArgumentException("Отсутствует epicId для подзадачи");
             }
             try {
-                epicId = Integer.parseInt(fields[5]);
+                epicId = Integer.parseInt(fields[7]);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Некорректный epicId: " + fields[5]);
+                throw new IllegalArgumentException("Некорректный epicId: " + fields[7]);
             }
         }
 
         switch (type) { // Создание соответствующего типа задач
             case TASK:
-                Task task = new Task(title, description);
+                Task task = new Task(title, description, status, duration, startTime);
                 task.setId(id); // Установка ID
                 task.setStatus(status); // Установка статуса
                 return task;
@@ -140,7 +165,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 epic.setStatus(status); // Установка статуса
                 return epic;
             case SUBTASK:
-                Subtask subtask = new Subtask(title, description, status, epicId);
+                Subtask subtask = new Subtask(title, description, status, epicId, duration, startTime);
                 subtask.setId(id); // Установка ID
                 subtask.setStatus(status); // Установка статуса
                 return subtask;
@@ -297,15 +322,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         // Определение типа задачи
         TaskType type = task instanceof Epic ? TaskType.EPIC :
                 task instanceof Subtask ? TaskType.SUBTASK : TaskType.TASK;
+        // Форматирование startTime и duration
+        String startTimeString = task.getStartTime() != null
+                ? task.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) // Преобразование в строку стандартного формата
+                : "";
+        String durationString = task.getDuration() != null
+                ? String.valueOf(task.getDuration().toMinutes()) // Сохранение продолжительности в минутах
+                : "";
         // Базовый формат для всех типов задач
-        String baseFormat = String.format("%d,%s,%s,%s,\"%s\"",
+        String baseFormat = String.format("%d,%s,%s,%s,\"%s\", %s, %s", // Форматирование всех полей в строку CSV
                 task.getId(),
                 type,
                 task.getTitle(),
                 task.getStatus() != null ? task.getStatus() : NEW,
-                description);
+                description,
+                startTimeString,
+                durationString);
         // Для подзадач добавляется ID эпика
-        return baseFormat + "," + (task instanceof Subtask ? ((Subtask) task).getEpicId() : "");
+        return baseFormat + (task instanceof Subtask ? "," + ((Subtask) task).getEpicId() : "");
     }
 
     /**
@@ -320,17 +354,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             // 2. Создание первого менеджера и добавление данных
             FileBackedTaskManager manager1 = new FileBackedTaskManager(tempFile.getAbsolutePath());
 
-            // Добавление задачи, эпика и подзадачи
-            Task task1 = new Task("Task 1", "Description 1");
+            // Добавление задачи с временными параметрами
+            Task task1 = new Task("Task 1", "Description 1", Status.NEW,
+                    Duration.ofMinutes(30),
+                    LocalDateTime.of(2023, 1, 1, 10, 0));
             manager1.addTask(task1);
 
+            // Добавление эпика
             Epic epic1 = new Epic("Epic 1", "Description 1");
             manager1.addEpic(epic1);
 
-            Subtask subtask1 = new Subtask("Subtask 1", "Description 1", Status.NEW, epic1.getId());
+            // Добавление подзадачи с привязкой к эпику и временными параметрами
+            Subtask subtask1 = new Subtask("Subtask 1", "Description 1", Status.NEW,
+                    epic1.getId(),
+                    Duration.ofMinutes(60),
+                    LocalDateTime.of(2023, 1, 1, 11, 0));
             manager1.addSubtask(subtask1);
 
-            // 3. Создание второй менеджера из того же файла
+            // 3. Создание второго менеджера из того же файла
             FileBackedTaskManager manager2 = new FileBackedTaskManager(tempFile.getAbsolutePath());
 
             // 4. Проверка соответствия данных
@@ -340,16 +381,26 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             assert manager2.getAllTasks().size() == 1 : "Задачи не совпадают";
             Task loadedTask = manager2.getTaskById(task1.getId());
             assert loadedTask != null && loadedTask.getTitle().equals("Task 1") : "Задача 1 не найдена";
+            assert loadedTask.getDuration().equals(Duration.ofMinutes(30)) : "Неверная продолжительность задачи";
+            assert loadedTask.getStartTime().equals(LocalDateTime.of(2023, 1, 1, 10, 0)) : "Неверное время начала задачи";
 
             // Проверка эпиков
             assert manager2.getAllEpics().size() == 1 : "Эпики не совпадают";
             Epic loadedEpic = manager2.getEpicById(epic1.getId());
             assert loadedEpic != null && loadedEpic.getTitle().equals("Epic 1") : "Эпик 1 не найден";
 
+            // Проверка расчета времени эпика
+            assert loadedEpic.getStartTime().equals(subtask1.getStartTime()) : "Неверное время начала эпика";
+            assert loadedEpic.getDuration().equals(subtask1.getDuration()) : "Неверная продолжительность эпика";
+            assert loadedEpic.getEndTime().equals(subtask1.getEndTime()) : "Неверное время окончания эпика";
+
             // Проверка подзадач
             assert manager2.getAllSubtasks().size() == 1 : "Подзадачи не совпадают";
             Subtask loadedSubtask = manager2.getSubtaskById(subtask1.getId());
             assert loadedSubtask != null && loadedSubtask.getTitle().equals("Subtask 1") : "Подзадача 1 не найдена";
+            assert loadedSubtask.getEpicId() == epic1.getId() : "Неверная привязка к эпику";
+            assert loadedSubtask.getDuration().equals(Duration.ofMinutes(60)) : "Неверная продолжительность подзадачи";
+            assert loadedSubtask.getStartTime().equals(LocalDateTime.of(2023, 1, 1, 11, 0)) : "Неверное время начала подзадачи";
 
             System.out.println("Все проверки пройдены успешно!");
 
