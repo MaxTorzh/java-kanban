@@ -24,6 +24,8 @@ public interface TaskManager {
 
     List<Task> getHistory();
 
+    List<Task> getPrioritizedTasks();
+
     void addTask(Task task);
 
     void addSubtask(Subtask subtask);
@@ -43,6 +45,8 @@ public interface TaskManager {
     void deleteSubtaskById(int id);
 
     void deleteEpicById(int id);
+
+    boolean hasTimeOverlap(Task task);
 
     List<Subtask> getAllSubtasksByEpicId(int epicId);
 }

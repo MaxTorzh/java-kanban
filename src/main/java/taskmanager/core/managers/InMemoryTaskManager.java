@@ -1,11 +1,10 @@
 package taskmanager.core.managers;
 
+import taskmanager.core.exceptions.TimeConflictException;
 import taskmanager.core.model.*;
 import taskmanager.core.util.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
     private int idCounter;
@@ -14,6 +13,12 @@ public class InMemoryTaskManager implements TaskManager {
     private final HashMap<Integer, Epic> epics;
     private final HistoryManager historyManager;
     private boolean isUpdatingStatus = false; // Флаг для блокировки рекурсии
+    private final TreeSet<Task> prioritizedTasks = new TreeSet<>( // Автоматически сортирует элементы при добавлении
+            Comparator.comparing(
+                    Task::getStartTime,
+                    Comparator.nullsLast(Comparator.naturalOrder()) // задачи со startTime == null идут в конец
+            )
+    );
 
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.idCounter = 1;
@@ -98,13 +103,27 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
+    public List<Task> getPrioritizedTasks() {
+        return new ArrayList<>(prioritizedTasks); // Создание копии для безопасности
+    }
+
+    @Override
     public void addTask(Task task) {
+        if (task.getStartTime() != null && hasTimeOverlap(task)) { // Добавление проверки по пересечению задач
+            throw new TimeConflictException("Задача пересекается по времени с существующей.");
+        }
         task.setId(generateId()); // Автоматическая установка уникального идентификатора
         tasks.put(task.getId(), task); // Добавление задачи в мапу
+        if (task.getStartTime() != null) {
+            prioritizedTasks.add(task); // Добавление задачи в приоритезированный список
+        }
     }
 
     @Override
     public void addSubtask(Subtask subtask) {
+        if (subtask.getStartTime() != null && hasTimeOverlap(subtask)) {
+            throw new TimeConflictException("Подзадача пересекается по времени");
+        }
         subtask.setId(generateId()); // Автоматическая установка уникального идентификатора
         if (subtask.getEpicId() == subtask.getId()) { // Если подзадача является эпиком для себя
             throw new IllegalArgumentException("Подзадача не может быть эпиком для себя");
@@ -161,11 +180,21 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
+        if (task.getStartTime() != null && hasTimeOverlap(task)) {
+            throw new TimeConflictException("Задача пересекается по времени с существующей.");
+        }
+        prioritizedTasks.remove(task);
         tasks.put(task.getId(), task);
+        if (task.getStartTime() != null) {
+            prioritizedTasks.add(task);
+        }
     }
 
     @Override
     public void updateSubtask(Subtask subtask) {
+        if (subtask.getStartTime() != null && hasTimeOverlap(subtask)) {
+            throw new TimeConflictException("Подзадача пересекается по времени");
+        }
         subtasks.put(subtask.getId(), subtask);
         Epic epic = epics.get(subtask.getEpicId());
         if (epic != null) {
@@ -182,6 +211,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void deleteTaskById(int id) {
         tasks.remove(id); // Удаление задачи из мапы
         historyManager.remove(id); // Удаление задачи из истории
+        prioritizedTasks.remove(tasks.get(id)); // Удаление задачи из приоритезированного списка
     }
 
     @Override
@@ -199,6 +229,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
         subtasks.remove(id); // Удаление подзадачи из мапы
         historyManager.remove(id); // Удаление подзадачи из истории
+        prioritizedTasks.remove(subtask); // Удаление подзадачи из приоритезированного списка
     }
 
     @Override
@@ -227,5 +258,15 @@ public class InMemoryTaskManager implements TaskManager {
             }
         }
         return result; // Возврат списка подзадач
+    }
+
+    @Override
+    public boolean hasTimeOverlap(Task newTask) {
+        if (newTask.getStartTime() == null) {
+            return false;
+        }
+        return prioritizedTasks.stream()
+                .filter(task -> task.getStartTime() != null)
+                .anyMatch(existingTask -> existingTask.isOverlapping(newTask));
     }
 }

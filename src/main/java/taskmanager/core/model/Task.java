@@ -83,6 +83,18 @@ public class Task {
         this.id = id;
     }
 
+    /**
+     * Две задачи пересекаются, если:
+     * Начало первой ≤ окончания второй И окончание первой ≥ начала второй.
+     */
+    public boolean isOverlapping(Task task) {
+        if (this.startTime == null || task.startTime == null) {
+            return false; // Задачи без времени не пересекаются
+        }
+        return !this.getEndTime().isBefore(task.startTime) &&
+                !task.getEndTime().isBefore(this.startTime);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
