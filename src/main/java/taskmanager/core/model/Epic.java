@@ -23,7 +23,7 @@ public class Epic extends Task {
      * @param subtasks
      */
     public void updateTimeParameters(List<Subtask> subtasks) {
-        if (subtasks.isEmpty()) {
+        if (subtasks == null || subtasks.isEmpty()) {
             this.setStartTime(null);
             this.setDuration(null);
             this.endTime = null;
@@ -41,7 +41,7 @@ public class Epic extends Task {
         LocalDateTime latestEnd = subtasks.stream() // Создание потока из списка подзадач
                 .map(Subtask::getEndTime) // Для каждой подзадачи вычисление ее endTime (преобразование в endTime)
                 .filter(Objects::nonNull) // Фильтрация null значений
-                .min(LocalDateTime::compareTo) // Поиск самого позднего времени
+                .max(LocalDateTime::compareTo) // Поиск самого позднего времени
                 .orElse(null); // Если все endTime = null, возвращается null
 
         this.setStartTime(earliestStart); // Старт epic = старт самой ранней подзадачи

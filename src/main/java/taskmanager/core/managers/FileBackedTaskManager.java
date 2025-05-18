@@ -49,7 +49,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
      */
     private void loadFromFile() {
         File file = new File(filePath);
-        if (!file.exists()) return; // Если файл не существует - нет данных для загрузки
+        if (!file.exists() || file.canRead()) { // Если файл не существует || нельзя прочитать - нет данных для загрузки
+            throw new ManagerSaveException("Не удалось открыть файл для чтения: " + file.getAbsolutePath());
+        }
 
         try {
             String content = Files.readString(file.toPath()); // Чтение всего содержимого файла
