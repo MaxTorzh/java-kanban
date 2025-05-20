@@ -18,13 +18,13 @@ public class InMemoryHistoryManagerTest {
         HistoryManager hm = new InMemoryHistoryManager();
         InMemoryTaskManager tm = new InMemoryTaskManager(hm); // Связываем историю с менеджером
 
-        Task task1 = new Task("Task1", "Desc1", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
         task1.setId(1);
         tm.addTask(task1);
         tm.getTaskById(1); // Получаем задачу и добавляем в историю
 
-        Task task2 = new Task("Task2", "Desc2", Status.IN_PROGRESS,
+        Task task2 = new Task("T2", "D2", Status.IN_PROGRESS,
                 Duration.ofMinutes(30), baseTime.plusHours(1));
         task2.setId(1);
         tm.updateTask(task2);
@@ -38,10 +38,10 @@ public class InMemoryHistoryManagerTest {
     @Test
     void testOrderOfTasks() { // Тест на порядок в истории
         HistoryManager hm = new InMemoryHistoryManager();
-        Task task1 = new Task("Task1", "Desc", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
         task1.setId(1);
-        Task task2 = new Task("Task2", "Desc", Status.IN_PROGRESS,
+        Task task2 = new Task("T2", "D2", Status.IN_PROGRESS,
                 Duration.ofMinutes(30), baseTime);
         task2.setId(2);
 
@@ -57,7 +57,7 @@ public class InMemoryHistoryManagerTest {
     @Test
     void testRemoveTask() { // Тест на удаление
         HistoryManager hm = new InMemoryHistoryManager();
-        Task task = new Task("Task", "Desc", Status.NEW,
+        Task task = new Task("T", "D", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
         hm.add(task);
         hm.remove(task.getId());
@@ -73,10 +73,10 @@ public class InMemoryHistoryManagerTest {
     @Test
     void testNoDuplicatesSameId() { // Тест на отсутствие дубликатов
         HistoryManager hm = new InMemoryHistoryManager();
-        Task task1 = new Task("Task1", "Desc", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
         task1.setId(1);
-        Task task2 = new Task("Task2", "Desc", Status.IN_PROGRESS,
+        Task task2 = new Task("T2", "D2", Status.IN_PROGRESS,
                 Duration.ofMinutes(30), baseTime);
         task2.setId(1); // Тот же id
 
@@ -91,9 +91,9 @@ public class InMemoryHistoryManagerTest {
     @Test
     void lastViewIsAddedToTheEnd() { // Тест на добавление в конец истории
         HistoryManager hm = new InMemoryHistoryManager();
-        Task task1 = new Task("Task1", "Desc1", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
-        Task task2 = new Task("Task2", "Desc2", Status.NEW,
+        Task task2 = new Task("T2", "D2", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
 
         task1.setId(1);

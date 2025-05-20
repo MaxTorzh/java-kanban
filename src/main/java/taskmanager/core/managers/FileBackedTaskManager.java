@@ -394,7 +394,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             assert loadedTask != null : "Задача 1 не найдена";
             assert loadedTask.getTitle().equals("Task 1") : "Неверное название задачи";
             assert loadedTask.getDuration().equals(Duration.ofMinutes(30)) : "Неверная продолжительность задачи";
-            assert loadedTask.getStartTime().equals(LocalDateTime.of(2023, 1, 1, 10, 0)) : "Неверное время начала задачи";
+            assert loadedTask.getStartTime().equals(LocalDateTime.of(
+                    2023, 1, 1, 10, 0)) : "Неверное время начала задачи";
 
             // Проверка эпиков
             assert manager2.getAllEpics().size() == 1 : "Эпики не совпадают";
@@ -412,7 +413,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             assert loadedSubtask != null && loadedSubtask.getTitle().equals("Subtask 1") : "Подзадача 1 не найдена";
             assert loadedSubtask.getEpicId() == epic1.getId() : "Неверная привязка к эпику";
             assert loadedSubtask.getDuration().equals(Duration.ofMinutes(60)) : "Неверная продолжительность подзадачи";
-            assert loadedSubtask.getStartTime().equals(LocalDateTime.of(2023, 1, 1, 11, 0)) : "Неверное время начала подзадачи";
+            assert loadedSubtask.getStartTime().equals(LocalDateTime.of(
+                    2023, 1, 1, 11, 0)) : "Неверное время начала подзадачи";
 
             System.out.println("Все проверки пройдены успешно!");
 

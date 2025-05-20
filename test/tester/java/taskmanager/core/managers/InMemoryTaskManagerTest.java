@@ -8,6 +8,8 @@ import taskmanager.core.util.TestData;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,11 +23,11 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void addAllTaskTypesAndFindsById() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
-        Task task = new Task("Task1", "Desc", Status.NEW,
+        Task task = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
-        Subtask subtask = new Subtask("Sub1", "Desc", Status.NEW, 1,
+        Subtask subtask = new Subtask("S1", "D1", Status.NEW, 1,
                 Duration.ofMinutes(30), baseTime.plusHours(1));
-        Epic epic = new Epic("Epic1", "Desc");
+        Epic epic = new Epic("E1", "D1");
         tm.addTask(task);
         tm.addSubtask(subtask);
         tm.addEpic(epic);
@@ -49,7 +51,7 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void testNoIdConflicts() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
-        Task task1 = new Task("Task1", "Desc1", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
         tm.addTask(task1);
 
@@ -68,7 +70,7 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void taskUnchangedAfterAdding() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
-        Subtask sub1 = new Subtask("Sub1", "Desc1", Status.NEW, 2,
+        Subtask sub1 = new Subtask("S1", "D1", Status.NEW, 2,
                 Duration.ofMinutes(30), baseTime);
         tm.addSubtask(sub1); // Добавление подзадачи
         Subtask sub2 = tm.getSubtaskById(sub1.getId()).orElse(null); // Возвращение ссылки на тот же объект, что и был добавлен
@@ -84,12 +86,27 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void testUniqueIdGeneration() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
-        Task task1 = new Task("Task1", "Desc1", Status.NEW,
+        Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
-        Task task2 = new Task("Task2", "Desc2", Status.NEW,
+        Task task2 = new Task("T2", "D2", Status.NEW,
                 Duration.ofMinutes(30), baseTime.plusHours(1));
         tm.addTask(task1); // id = 1, счетчик начинается с 1
         tm.addTask(task2); // id = 2
         assertEquals(task1.getId() + 1, task2.getId()); // id второй задачи должен быть на 1 больше первого
+    }
+
+    @Test
+    void testGetPrioritizedTasks_SortsByStartTime() {
+        InMemoryTaskManager tm = new InMemoryTaskManager();
+        Task t1 = new Task("T1", "D1", Status.NEW, Duration.ofMinutes(30), baseTime.plusHours(2));
+        Task t2 = new Task("T2", "D2", Status.NEW, Duration.ofMinutes(30), baseTime);
+        Task t3 = new Task("T3", "D3", Status.NEW, Duration.ofMinutes(30), baseTime.plusHours(1));
+        Task t4 = new Task("T4", "D4", Status.NEW, Duration.ofMinutes(30), baseTime.plusHours(3));
+        tm.addTask(t2);
+        tm.addTask(t3);
+        tm.addTask(t1);
+        tm.addTask(t4);
+        List<Task> prioritized = tm.getPrioritizedTasks();
+        assertEquals(Arrays.asList(t2, t3, t1, t4), prioritized);
     }
 }

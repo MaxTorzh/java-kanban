@@ -137,5 +137,10 @@ public class Main {
             System.out.println(subtask);
         }
         System.out.println("-".repeat(115));
+        System.out.println("Приоритезированные задачи:");
+        for (Task task :manager.getPrioritizedTasks()) {
+            System.out.println(task);
+        }
+        System.out.println("-".repeat(115));
     }
 }
