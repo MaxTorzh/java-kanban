@@ -54,10 +54,8 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteAllSubtasks() {
-        subtasks.clear();
-        for (Epic epic : epics.values()) { // Перебор всех значений в мапе эпика
-            epic.getSubtaskIds().clear(); // Очистка списка подзадач у каждого эпика
-        }
+        subtasks.clear(); // Очистка подзадач
+        epics.values().forEach(epic -> epic.setSubtaskIds(new ArrayList<>())); // Очистка списка подзадач у эпиков
     }
 
     @Override
@@ -221,30 +219,22 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteEpicById(int id) {
-        Epic epic = epics.get(id); // Получение эпика по идентификатору
-        if (epic != null) { // Если эпик существует
-            for (Integer subtaskId : new ArrayList<>(epic.getSubtaskIds())) { // Перебор всех id подзадач
-                deleteSubtaskById(subtaskId); // Удаление подзадач по id из оригинального списка
-            }
-        }
+        Optional.ofNullable(epics.get(id)) // Если эпик существует
+                .map(Epic::getSubtaskIds) // Получение списка id подзадач
+                .ifPresent(ids -> ids.forEach(this::deleteSubtaskById)); //  Удаление подзадач по этому ID
         epics.remove(id); // Удаление эпика из мапы
         historyManager.remove(id); // Удаление эпика из истории
     }
 
     @Override
     public List<Subtask> getAllSubtasksByEpicId(int epicId) { // Метод для получения всех подзадач по id эпика
-        Epic epic = epics.get(epicId); // Получение эпика по id
-        if (epic == null) { // Если эпик не существует
-            return new ArrayList<>(); // Возврат пустого списка
-        }
-        List<Subtask> result = new ArrayList<>(); // Создание списка для результата
-        for (Integer subtaskId : epic.getSubtaskIds()) { // Перебор всех id подзадач
-            Subtask subtask = subtasks.get(subtaskId); // Получение подзадачи по id
-            if (subtask != null) { // Если подзадача существует
-                result.add(subtask); // Добавление подзадачи в список
-            }
-        }
-        return result; // Возврат списка подзадач
+        return Optional.ofNullable(epics.get(epicId)) // Если эпик существует
+                .map(Epic::getSubtaskIds) // Получение списка id подзадач
+                .stream() // Преобразование в поток, чтобы можно было применять методы map и filter
+                .flatMap(List::stream) // Преобразование в поток, для каждого id подзадачи получение подзадачи
+                .map(subtasks::get) // Получение подзадачи по id
+                .filter(Objects::nonNull) // Фильтрация null значений
+                .toList(); // Преобразование в список
     }
 
     /**
