@@ -283,7 +283,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
      * Сохраняет все задачи, эпики и подзадачи в формате CSV
      */
     private void save() {
-        Set<Integer>writtenIds = new HashSet<>();
+        Set<Integer> writtenIds = new HashSet<>();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write("id,type,name,status,description,start_time,duration,epic\n");
