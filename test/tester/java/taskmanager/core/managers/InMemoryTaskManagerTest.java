@@ -8,6 +8,7 @@ import taskmanager.core.util.TestData;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,9 +30,20 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         tm.addSubtask(subtask);
         tm.addEpic(epic);
 
-        assertEquals(task, tm.getTaskById(task.getId())); // По id должна вернуться та же задача, что и была добавлена
-        assertEquals(subtask, tm.getSubtaskById(subtask.getId())); // Здесь тоже
-        assertEquals(epic, tm.getEpicById(epic.getId())); // И здесь
+        // Проверка задачи
+        Optional<Task> loadedTaskOpt = tm.getTaskById(task.getId());
+        assertTrue(loadedTaskOpt.isPresent());
+        assertEquals(task, loadedTaskOpt.get());
+
+        // Проверка подзадачи
+        Optional<Subtask> loadedSubtaskOpt = tm.getSubtaskById(subtask.getId());
+        assertTrue(loadedSubtaskOpt.isPresent());
+        assertEquals(subtask, loadedSubtaskOpt.get());
+
+        // Проверка эпика
+        Optional<Epic> loadedEpicOpt = tm.getEpicById(epic.getId());
+        assertTrue(loadedEpicOpt.isPresent());
+        assertEquals(epic, loadedEpicOpt.get());
     }
 
     @Test
@@ -41,7 +53,16 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
                 Duration.ofMinutes(30), baseTime);
         tm.addTask(task1);
 
-        assertEquals(task1, tm.getTaskById(task1.getId())); // По id должна вернуться та же задача, что и была добавлена
+        Optional<Task> loadedOpt = tm.getTaskById(task1.getId());
+        assertTrue(loadedOpt.isPresent());
+
+        Task loaded = loadedOpt.get();
+        assertEquals(task1.getTitle(), loaded.getTitle());
+        assertEquals(task1.getDescription(), loaded.getDescription());
+        assertEquals(task1.getStatus(), loaded.getStatus());
+        assertEquals(task1.getId(), loaded.getId());
+        assertEquals(task1.getDuration(), loaded.getDuration());
+        assertEquals(task1.getStartTime(), loaded.getStartTime());
     }
 
     @Test
@@ -50,8 +71,9 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         Subtask sub1 = new Subtask("Sub1", "Desc1", Status.NEW, 2,
                 Duration.ofMinutes(30), baseTime);
         tm.addSubtask(sub1); // Добавление подзадачи
-        Subtask sub2 = tm.getSubtaskById(sub1.getId()); // Возвращение ссылки на тот же объект, что и был добавлен
+        Subtask sub2 = tm.getSubtaskById(sub1.getId()).orElse(null); // Возвращение ссылки на тот же объект, что и был добавлен
 
+        assert sub2 != null;
         assertEquals(sub1.getTitle(), sub2.getTitle());
         assertEquals(sub1.getDescription(), sub2.getDescription());
         assertEquals(sub1.getStatus(), sub2.getStatus());

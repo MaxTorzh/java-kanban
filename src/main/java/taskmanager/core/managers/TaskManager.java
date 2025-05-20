@@ -2,6 +2,7 @@ package taskmanager.core.managers;
 
 import taskmanager.core.model.*;
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskManager {
     List<Task> getAllTasks();
@@ -16,11 +17,11 @@ public interface TaskManager {
 
     void deleteAllEpics();
 
-    Task getTaskById(int id);
+    Optional<Task> getTaskById(int id);
 
-    Subtask getSubtaskById(int id);
+    Optional<Subtask> getSubtaskById(int id);
 
-    Epic getEpicById(int id);
+    Optional<Epic> getEpicById(int id);
 
     List<Task> getHistory();
 

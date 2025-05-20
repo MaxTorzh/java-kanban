@@ -96,7 +96,8 @@ public class Main {
             // Загрузка из файла
             FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(updateFile);
 
-            Task loadedTask = loadedManager.getTaskById(task.getId());
+            Task loadedTask = loadedManager.getTaskById(task.getId()).orElse(null);
+            assert loadedTask != null;
             assert loadedTask.getDescription().equals("New Description");
             assert loadedTask.getStatus() == Status.DONE;
 

@@ -67,30 +67,30 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Task getTaskById(int id) {
-        Task task = tasks.get(id);
-        if (task != null) {
-            historyManager.add(task);
-        }
-        return task;
+    public Optional<Task> getTaskById(int id) {
+        return Optional.ofNullable(tasks.get(id))
+                .map(task -> {
+                    historyManager.add(task);
+                    return task;
+                });
     }
 
     @Override
-    public Subtask getSubtaskById(int id) {
-        Subtask subtask = subtasks.get(id);
-        if (subtask != null) {
-            historyManager.add(subtask);
-        }
-        return subtask;
+    public Optional<Subtask> getSubtaskById(int id) {
+        return Optional.ofNullable(subtasks.get(id))
+                .map(subtask -> {
+                    historyManager.add(subtask);
+                    return subtask;
+                });
     }
 
     @Override
-    public Epic getEpicById(int id) {
-        Epic epic = epics.get(id);
-        if (epic != null) {
-            historyManager.add(epic);
-        }
-        return epic;
+    public Optional<Epic> getEpicById(int id) {
+        return Optional.ofNullable(epics.get(id))
+                .map(epic -> {
+                    historyManager.add(epic);
+                    return epic;
+                });
     }
 
     @Override
@@ -152,23 +152,14 @@ public class InMemoryTaskManager implements TaskManager {
                 epic.setStatus(Status.NEW);
                 return;
             }
-            boolean isAllDone = true; // Проверка, все ли подзадачи DONE
-            boolean isAllNew = true; // Проверка, все ли подзадачи NEW
-            for (Subtask subtask : actualSubtasks) { // Перебор всех актуальных подзадач
-                if (subtask.getStatus() != Status.DONE) { // Если статус подзадачи не DONE, то isAllDone = false
-                    isAllDone = false;
-                }
-                if (subtask.getStatus() != Status.NEW) { // Если статус подзадачи не NEW, то isAllNew = false
-                    isAllNew = false;
-                }
-            }
-            if (isAllDone) {
-                epic.setStatus(Status.DONE); // Если у epic все подзадачи DONE, то статус = DONE
-            } else if (isAllNew) {
-                epic.setStatus(Status.NEW); // Если у epic все подзадачи NEW, то статус = NEW
-            } else {
-                epic.setStatus(Status.IN_PROGRESS); // Если у epic подзадачи DONE и NEW, то статус = IN_PROGRESS
-            }
+            boolean isAllDone = areAllSubtasks(actualSubtasks, Status.DONE); // Проверка, все ли подзадачи DONE
+            boolean isAllNew = areAllSubtasks(actualSubtasks, Status.NEW); // Проверка, все ли подзадачи NEW
+
+            epic.setStatus(
+                    isAllDone ? Status.DONE :
+                            isAllNew ? Status.NEW :
+                                    Status.IN_PROGRESS
+            );
         } finally {
             isUpdatingStatus = false;
         }
@@ -256,6 +247,11 @@ public class InMemoryTaskManager implements TaskManager {
         return result; // Возврат списка подзадач
     }
 
+    /**
+     * Проверка пересечения времени (линейная сложность O(n))
+     * @param newTask - новая задача
+     * @return - true, если пересечение есть, иначе false
+     */
     @Override
     public boolean hasTimeOverlap(Task newTask) {
         if (newTask.getStartTime() == null) {
@@ -268,6 +264,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     private int generateId() { // Так как это внутренний счетчик класса, то метод должен быть приватный
         return idCounter++; // Создание счетчика идентификаторов
+    }
+
+    private boolean areAllSubtasks(List<Subtask> subtasks, Status status) {
+        return subtasks.stream().allMatch(task -> task.getStatus() == status);
     }
 
     /**

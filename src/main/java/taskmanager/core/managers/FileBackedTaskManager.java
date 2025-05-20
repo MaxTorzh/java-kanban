@@ -390,14 +390,15 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
             // Проверка задач
             assert manager2.getAllTasks().size() == 1 : "Задачи не совпадают";
-            Task loadedTask = manager2.getTaskById(task1.getId());
-            assert loadedTask != null && loadedTask.getTitle().equals("Task 1") : "Задача 1 не найдена";
+            Task loadedTask = manager2.getTaskById(task1.getId()).orElse(null);
+            assert loadedTask != null : "Задача 1 не найдена";
+            assert loadedTask.getTitle().equals("Task 1") : "Неверное название задачи";
             assert loadedTask.getDuration().equals(Duration.ofMinutes(30)) : "Неверная продолжительность задачи";
             assert loadedTask.getStartTime().equals(LocalDateTime.of(2023, 1, 1, 10, 0)) : "Неверное время начала задачи";
 
             // Проверка эпиков
             assert manager2.getAllEpics().size() == 1 : "Эпики не совпадают";
-            Epic loadedEpic = manager2.getEpicById(epic1.getId());
+            Epic loadedEpic = manager2.getEpicById(epic1.getId()).orElse(null);
             assert loadedEpic != null && loadedEpic.getTitle().equals("Epic 1") : "Эпик 1 не найден";
 
             // Проверка расчета времени эпика
@@ -407,7 +408,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
             // Проверка подзадач
             assert manager2.getAllSubtasks().size() == 1 : "Подзадачи не совпадают";
-            Subtask loadedSubtask = manager2.getSubtaskById(subtask1.getId());
+            Subtask loadedSubtask = manager2.getSubtaskById(subtask1.getId()).orElse(null);
             assert loadedSubtask != null && loadedSubtask.getTitle().equals("Subtask 1") : "Подзадача 1 не найдена";
             assert loadedSubtask.getEpicId() == epic1.getId() : "Неверная привязка к эпику";
             assert loadedSubtask.getDuration().equals(Duration.ofMinutes(60)) : "Неверная продолжительность подзадачи";
