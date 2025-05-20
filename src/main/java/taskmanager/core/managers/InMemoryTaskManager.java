@@ -13,7 +13,7 @@ public class InMemoryTaskManager implements TaskManager {
     private final HashMap<Integer, Epic> epics;
     private final HistoryManager historyManager;
     private boolean isUpdatingStatus = false; // Флаг для блокировки рекурсии
-    private final TreeSet<Task> prioritizedTasks = new TreeSet<>( // Автоматически сортирует элементы при добавлении
+    private final TreeSet<Task> prioritizedTasks = new TreeSet<>(
             Comparator.comparing(
                     Task::getStartTime,
                     Comparator.nullsLast(Comparator.naturalOrder()) // задачи со startTime == null идут в конец
