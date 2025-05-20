@@ -120,6 +120,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             return Optional.empty(); // При ошибке возвращается Optional.empty() с логированием ошибки
         }
     }
+
     /**
      * Приватный метод для загрузки задач из файла в текущий менеджер.
      * Если файл не существует или пуст — ничего не происходит.
@@ -127,6 +128,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private void loadFromFile() {
         File file = new File(filePath);
         if (!file.exists() || file.length() == 0) return;
+
         try {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\\R");
@@ -275,12 +277,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
         return fields.toArray(new String[0]);
     }
+
     /**
      * Метод для сохранения текущего состояния в файл
      * Сохраняет все задачи, эпики и подзадачи в формате CSV
      */
     private void save() {
-        Set<Integer> writtenIds = new HashSet<>();
+        Set<Integer>writtenIds = new HashSet<>();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write("id,type,name,status,description,start_time,duration,epic\n");
