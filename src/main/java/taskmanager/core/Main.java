@@ -46,12 +46,12 @@ public class Main {
 
             // Запись тестовых данных в файл
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-                writer.write("id,type,name,status,description,epic\n");
-                writer.write("1,TASK,Task1,NEW,Description1,\n");
-                writer.write("2,TASK,Task2,IN_PROGRESS,Description2,\n");
-                writer.write("3,EPIC,Epic1,IN_PROGRESS,Description1,\n");
-                writer.write("4,SUBTASK,Subtask1,NEW,Description1,3\n");
-                writer.write("5,SUBTASK,Subtask2,DONE,Description2,3\n");
+                writer.write("id,type,name,status,description,start_time,duration,epic\n");
+                writer.write("1,TASK,Task1,NEW,Description1,2025-04-05T10:00,30,\n");
+                writer.write("2,TASK,Task2,IN_PROGRESS,Description2,2025-04-05T11:00,60,\n");
+                writer.write("3,EPIC,Epic1,IN_PROGRESS,Description1,,,\n");
+                writer.write("4,SUBTASK,Subtask1,NEW,Description1,2025-04-05T12:00,60,3\n");
+                writer.write("5,SUBTASK,Subtask2,DONE,Description2,2025-04-05T13:10,60,3\n");
             } catch (IOException e) {
                 System.out.println("Ошибка при записи во временный файл: " + e.getMessage());
                 return;

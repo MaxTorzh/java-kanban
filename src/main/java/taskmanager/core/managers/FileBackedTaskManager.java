@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.function.Function;
 
 import static taskmanager.core.util.Status.NEW;
 
@@ -33,54 +34,116 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     /**
-     * Статический метод для загрузки менеджера из существующего файла
-     * @param file - Файл с сохраненными данными
-     * @return - Новый экземпляр FileBackedTaskManager с загруженными данными
+     * Статический метод для создания нового экземпляра FileBackedTaskManager
+     * с предварительной загрузкой данных из указанного файла.
+     *
+     * @param file файл с данными
+     * @return новый экземпляр FileBackedTaskManager
      */
     public static FileBackedTaskManager loadFromFile(File file) {
+        if (!file.exists() || !file.canRead()) {
+            throw new ManagerSaveException("Не удалось открыть файл для чтения: " + file.getAbsolutePath());
+        }
         FileBackedTaskManager manager = new FileBackedTaskManager(file.getAbsolutePath());
         manager.loadFromFile(); // Дополнительная загрузка (на случай если файл изменился после создания)
         return manager;
     }
 
     /**
-     * Метод загрузки данных из файла в память
-     * Обрабатывает возможные ошибки чтения
+     * Переопределенные методы для автоматического сохранения при изменении данных
+     * Вызывают super-метод для изменения коллекции и save() для сохранения в файл
+     */
+    @Override
+    public void addTask(Task task) {
+        super.addTask(task);
+        save();
+    }
+
+    @Override
+    public void addSubtask(Subtask subtask) {
+        super.addSubtask(subtask);
+        save();
+    }
+
+    @Override
+    public void addEpic(Epic epic) {
+        super.addEpic(epic);
+        save();
+    }
+
+    @Override
+    public void updateTask(Task task) {
+        super.updateTask(task);
+        save();
+    }
+
+    @Override
+    public void updateSubtask(Subtask subtask) {
+        super.updateSubtask(subtask);
+        save();
+    }
+
+    @Override
+    public void updateEpic(Epic epic) {
+        super.updateEpic(epic);
+        save();
+    }
+
+    @Override
+    public void deleteTaskById(int id) {
+        super.deleteTaskById(id);
+        save();
+    }
+
+    @Override
+    public void deleteSubtaskById(int id) {
+        super.deleteSubtaskById(id);
+        save();
+    }
+
+    @Override
+    public void deleteEpicById(int id) {
+        super.deleteEpicById(id);
+        save();
+    }
+
+    /**
+     * Обертка вокруг метода fromString
+     * @param line - строка с данными
+     * @return - объект Task или null
+     */
+    private Optional<Task> safeFromString(String line) {
+        try { // Оборачивание вызова fromString в try-catch
+            return Optional.of(fromString(line)); // При успехе возвращается Optional.of(task)
+        } catch (IllegalArgumentException e) {
+            System.out.println("Некорректная строка: " + line + ". Пропуск.");
+            return Optional.empty(); // При ошибке возвращается Optional.empty() с логированием ошибки
+        }
+    }
+    /**
+     * Приватный метод для загрузки задач из файла в текущий менеджер.
+     * Если файл не существует или пуст — ничего не происходит.
      */
     private void loadFromFile() {
         File file = new File(filePath);
-        if (!file.exists() || file.canRead()) { // Если файл не существует || нельзя прочитать - нет данных для загрузки
-            throw new ManagerSaveException("Не удалось открыть файл для чтения: " + file.getAbsolutePath());
-        }
-
+        if (!file.exists() || file.length() == 0) return;
         try {
-            String content = Files.readString(file.toPath()); // Чтение всего содержимого файла
-            String[] lines = content.split("\\R"); // Разделение на строки с универсальным разделителем
-            boolean headerPassed = false; // Флаг для пропуска заголовка
+            String content = Files.readString(file.toPath());
+            String[] lines = content.split("\\R");
 
-            for (String line : lines) {
-                if (line.trim().isEmpty()) continue; // Пропуск пустых строк
-                if (!headerPassed) {
-                    headerPassed = true; // Пропуск первой строки (заголовка)
-                    continue;
-                }
+            List<Task> tasks = Arrays.stream(lines) // Создание потока из массива строк файла
+                    .skip(1) // Пропуск первой строки (заголовок CSV)
+                    .filter(line -> !line.trim().isEmpty()) // Фильтрация пустых строк
+                    .filter(line -> line.matches("^\\d+.*")) // Фильтрация строк, которые начинаются с ID
+                    .map(this::safeFromString) // Преобразование строк (Optional.of(task)) или Optional.empty()
+                    .flatMap(Optional::stream) // Оборачивается в Stream<Task> или Stream.empty(). Зависит от Optional
+                    .toList(); // Сбор всех полученных задач в список
+            tasks.forEach(task -> { // Добавление каждой задачи в соответствующие коллекции
+                if (task instanceof Epic epic) internalAddEpic(epic);
+                else if (task instanceof Subtask subtask) internalAddSubtask(subtask);
+                else internalAddTask(task);
+            });
 
-                // Проверка, что строка начинается с цифры (ID)
-                if (!line.matches("^\\d+.*")) continue;
-
-                try {
-                    Task task = fromString(line); // Преобразование строки в задачу
-                    if (task instanceof Epic) { // Добавление задачи в соответствующую коллекцию
-                        addEpic((Epic) task);
-                    } else if (task instanceof Subtask) {
-                        addSubtask((Subtask) task);
-                    } else {
-                        addTask(task);
-                    }
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Некорректная строка: " + line + ". Пропуск.");
-                }
-            }
         } catch (IOException e) {
             System.out.println("Ошибка при чтении файла: " + e.getMessage());
         }
@@ -212,104 +275,49 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
         return fields.toArray(new String[0]);
     }
-
-    /**
-     * Переопределенные методы для автоматического сохранения при изменении данных
-     * Вызывают super-метод для изменения коллекции и save() для сохранения в файл
-     */
-    @Override
-    public void addTask(Task task) {
-        super.addTask(task);
-        save();
-    }
-
-    @Override
-    public void addSubtask(Subtask subtask) {
-        super.addSubtask(subtask);
-        save();
-    }
-
-    @Override
-    public void addEpic(Epic epic) {
-        super.addEpic(epic);
-        save();
-    }
-
-    @Override
-    public void updateTask(Task task) {
-        super.updateTask(task);
-        save();
-    }
-
-    @Override
-    public void updateSubtask(Subtask subtask) {
-        super.updateSubtask(subtask);
-        save();
-    }
-
-    @Override
-    public void updateEpic(Epic epic) {
-        super.updateEpic(epic);
-        save();
-    }
-
-    @Override
-    public void deleteTaskById(int id) {
-        super.deleteTaskById(id);
-        save();
-    }
-
-    @Override
-    public void deleteSubtaskById(int id) {
-        super.deleteSubtaskById(id);
-        save();
-    }
-
-    @Override
-    public void deleteEpicById(int id) {
-        super.deleteEpicById(id);
-        save();
-    }
-
     /**
      * Метод для сохранения текущего состояния в файл
      * Сохраняет все задачи, эпики и подзадачи в формате CSV
      */
     private void save() {
+        Set<Integer> writtenIds = new HashSet<>();
+
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writer.write("id,type,name,status,description,epic\n"); // Запись заголовка CSV
-            Set<Integer> writtenIds = new HashSet<>(); // Для отслеживания уже записанных ID
-            // Сохранение задач
-            for (Task task : getAllTasks()) {
-                if (!writtenIds.add(task.getId())) {
-                    System.out.println("Дубликат ID в коллекции задач: " + task.getId() + ". Пропуск.");
-                    continue;
-                }
-                writer.write(toString(task) + "\n");
-            }
+            writer.write("id,type,name,status,description,start_time,duration,epic\n");
 
-            // Сохранение эпиков
-            for (Epic epic : getAllEpics()) {
-                if (!writtenIds.add(epic.getId())) {
-                    System.out.println("Дубликат ID в коллекции эпиков: " + epic.getId() + ". Пропуск.");
-                    continue;
-                }
-                writer.write(toString(epic) + "\n");
-            }
+            writeTasks(writer, writtenIds, getAllTasks(), this::toString);
+            writeTasks(writer, writtenIds, getAllEpics(), this::toString);
+            writeTasks(writer, writtenIds, getAllSubtasks(), this::toString);
 
-            // Сохранение подзадач
-            for (Subtask subtask : getAllSubtasks()) {
-                if (!writtenIds.add(subtask.getId())) {
-                    System.out.println("Дубликат ID в коллекции подзадач: " + subtask.getId() + ". Пропуск.");
-                    continue;
-                }
-                writer.write(toString(subtask) + "\n");
-            }
-
-            writer.flush(); // Гарантирует запись на диск
+            writer.flush();
         } catch (IOException e) {
             throw new ManagerSaveException("Ошибка при записи в файл", e);
         }
+    }
+
+    /**
+     * Универсальный метод для записи задач в файл
+     * @param writer - куда будут записаны строки
+     * @param writtenIds - множество ID для проверки дубликатов
+     * @param tasks - множество задач любого типа
+     * @param toStringFunction - интерфейс, принимающий объект типа T и возвращающий строку (toString(task)).
+     * @param <T> - тип задачи
+     */
+    private <T extends Task> void writeTasks(
+            BufferedWriter writer,
+            Set<Integer> writtenIds,
+            List<T> tasks, Function<T, String> toStringFunction) {
+
+        tasks.stream() // Создание потока из списка задач
+                .filter(task -> writtenIds.add(task.getId())) // Сортировка дубликатов по ID
+                .map(toStringFunction) // Преобразование задачи в строку CSV
+                .forEach(line -> { // Запись каждой строки в файл
+                    try { // Поиск возможных исключения и оборачивание их в RuntimeException
+                        writer.write(line + "\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     /**
@@ -345,7 +353,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     /**
-     * Дополнительное задание
+     * Основной метод для тестирования работы FileBackedTaskManager.
+     * Создаёт задачи, сохраняет их в файл и проверяет корректность загрузки.
      */
     public static void main(String[] args) {
         try {

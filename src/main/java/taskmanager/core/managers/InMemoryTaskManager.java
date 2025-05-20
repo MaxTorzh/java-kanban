@@ -32,10 +32,6 @@ public class InMemoryTaskManager implements TaskManager {
         this(Managers.getDefaultHistory()); // Делегируем к конструктору выше
     }
 
-    private int generateId() { // Так как это внутренний счетчик класса, то метод должен быть приватный
-        return idCounter++; // Создание счетчика идентификаторов
-    }
-
     @Override
     public List<Task> getAllTasks() {
         return new ArrayList<>(tasks.values()); // Получение всех задач. Возврат копии списка, для защиты от изменений
@@ -268,5 +264,39 @@ public class InMemoryTaskManager implements TaskManager {
         return prioritizedTasks.stream()
                 .filter(task -> task.getStartTime() != null)
                 .anyMatch(existingTask -> existingTask.isOverlapping(newTask));
+    }
+
+    private int generateId() { // Так как это внутренний счетчик класса, то метод должен быть приватный
+        return idCounter++; // Создание счетчика идентификаторов
+    }
+
+    /**
+     * Добавление задач при загрузке из файла
+     * Данные уже были добавлены при вызове addTask или addSubtask
+     * Дополнительная проверка в этом случае избыточна
+     * @param task Задача для добавления
+     */
+    protected void internalAddTask(Task task) {
+        task.setId(generateId());
+        tasks.put(task.getId(), task);
+        if (task.getStartTime() != null) {
+            prioritizedTasks.add(task);
+        }
+    }
+
+    protected void internalAddSubtask(Subtask subtask) {
+        subtask.setId(generateId());
+        subtasks.put(subtask.getId(), subtask);
+
+        Epic epic = epics.get(subtask.getEpicId());
+        if (epic != null) {
+            epic.addSubtask(subtask.getId());
+            updateEpicStatus(subtask.getEpicId());
+        }
+    }
+
+    protected void internalAddEpic(Epic epic) {
+        epic.setId(generateId());
+        epics.put(epic.getId(), epic);
     }
 }
