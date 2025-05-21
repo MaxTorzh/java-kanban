@@ -2,7 +2,6 @@ package taskmanager.core.managers;
 
 import taskmanager.core.model.*;
 import java.util.List;
-import java.util.Optional;
 
 public interface TaskManager {
     List<Task> getAllTasks();
