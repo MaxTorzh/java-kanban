@@ -96,7 +96,7 @@ public class Main {
             // Загрузка из файла
             FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(updateFile);
 
-            Task loadedTask = loadedManager.getTaskById(task.getId()).orElse(null);
+            Task loadedTask = loadedManager.getTaskById(task.getId());
             assert loadedTask != null;
             assert loadedTask.getDescription().equals("New Description");
             assert loadedTask.getStatus() == Status.DONE;
@@ -138,7 +138,7 @@ public class Main {
         }
         System.out.println("-".repeat(115));
         System.out.println("Приоритезированные задачи:");
-        for (Task task :manager.getPrioritizedTasks()) {
+        for (Task task : manager.getPrioritizedTasks()) {
             System.out.println(task);
         }
         System.out.println("-".repeat(115));

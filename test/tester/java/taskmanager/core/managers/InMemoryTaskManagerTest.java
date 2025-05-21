@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,29 +22,33 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void addAllTaskTypesAndFindsById() {
         InMemoryTaskManager tm = new InMemoryTaskManager();
+
+        // Создаём задачи
         Task task = new Task("T1", "D1", Status.NEW,
                 Duration.ofMinutes(30), baseTime);
-        Subtask subtask = new Subtask("S1", "D1", Status.NEW, 1,
-                Duration.ofMinutes(30), baseTime.plusHours(1));
         Epic epic = new Epic("E1", "D1");
+        Subtask subtask = new Subtask("S1", "D1", Status.NEW, epic.getId(),
+                Duration.ofMinutes(30), baseTime.plusHours(1));
+
+        // Добавляем задачи
         tm.addTask(task);
-        tm.addSubtask(subtask);
         tm.addEpic(epic);
+        tm.addSubtask(subtask);
 
-        // Проверка задачи
-        Optional<Task> loadedTaskOpt = tm.getTaskById(task.getId());
-        assertTrue(loadedTaskOpt.isPresent());
-        assertEquals(task, loadedTaskOpt.get());
+        // Проверяем задачу
+        Task loadedTask = tm.getTaskById(task.getId());
+        assertNotNull(loadedTask, "Задача не должна быть null");
+        assertEquals(task, loadedTask);
 
-        // Проверка подзадачи
-        Optional<Subtask> loadedSubtaskOpt = tm.getSubtaskById(subtask.getId());
-        assertTrue(loadedSubtaskOpt.isPresent());
-        assertEquals(subtask, loadedSubtaskOpt.get());
+        // Проверяем подзадачу
+        Subtask loadedSubtask = tm.getSubtaskById(subtask.getId());
+        assertNotNull(loadedSubtask, "Подзадача не должна быть null");
+        assertEquals(subtask, loadedSubtask);
 
-        // Проверка эпика
-        Optional<Epic> loadedEpicOpt = tm.getEpicById(epic.getId());
-        assertTrue(loadedEpicOpt.isPresent());
-        assertEquals(epic, loadedEpicOpt.get());
+        // Проверяем эпик
+        Epic loadedEpic = tm.getEpicById(epic.getId());
+        assertNotNull(loadedEpic, "Эпик не должен быть null");
+        assertEquals(epic, loadedEpic);
     }
 
     @Test
@@ -55,10 +58,9 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
                 Duration.ofMinutes(30), baseTime);
         tm.addTask(task1);
 
-        Optional<Task> loadedOpt = tm.getTaskById(task1.getId());
-        assertTrue(loadedOpt.isPresent());
+        Task loaded = tm.getTaskById(task1.getId());
+        assertNotNull(loaded, "Загруженная задача не должна быть null");
 
-        Task loaded = loadedOpt.get();
         assertEquals(task1.getTitle(), loaded.getTitle());
         assertEquals(task1.getDescription(), loaded.getDescription());
         assertEquals(task1.getStatus(), loaded.getStatus());
@@ -73,7 +75,7 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         Subtask sub1 = new Subtask("S1", "D1", Status.NEW, 2,
                 Duration.ofMinutes(30), baseTime);
         tm.addSubtask(sub1); // Добавление подзадачи
-        Subtask sub2 = tm.getSubtaskById(sub1.getId()).orElse(null); // Возвращение ссылки на тот же объект, что и был добавлен
+        Subtask sub2 = tm.getSubtaskById(sub1.getId()); // Возвращение ссылки на тот же объект, что и был добавлен
 
         assert sub2 != null;
         assertEquals(sub1.getTitle(), sub2.getTitle());

@@ -61,9 +61,9 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     public void testTimeOverlap() {
         Task task1 = new Task("T1", "D1", Status.NEW,
                 Duration.ofHours(1), baseTime); // Создание задачи с определенным временем
+        manager.addTask(task1); // Добавление первой задачи
         Task task2 = new Task("T2", "D2", Status.NEW,
                 Duration.ofHours(2), baseTime.plusMinutes(30)); // Пересечение с первой задачей на 30 минут
-        manager.addTask(task1); // Добавление первой задачи
         assertThrows(TimeConflictException.class, () -> manager.addTask(task2)); // Исключение, если есть пересечение
     }
 

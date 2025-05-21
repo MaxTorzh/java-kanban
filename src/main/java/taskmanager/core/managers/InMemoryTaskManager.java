@@ -65,30 +65,30 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Optional<Task> getTaskById(int id) {
-        return Optional.ofNullable(tasks.get(id))
-                .map(task -> {
-                    historyManager.add(task);
-                    return task;
-                });
+    public Task getTaskById(int id) {
+        Task task = tasks.get(id);
+        if (task != null) {
+            historyManager.add(task);
+        }
+        return task;
     }
 
     @Override
-    public Optional<Subtask> getSubtaskById(int id) {
-        return Optional.ofNullable(subtasks.get(id))
-                .map(subtask -> {
-                    historyManager.add(subtask);
-                    return subtask;
-                });
+    public Subtask getSubtaskById(int id) {
+        Subtask subtask = subtasks.get(id);
+        if (subtask != null) {
+            historyManager.add(subtask);
+        }
+        return subtask;
     }
 
     @Override
-    public Optional<Epic> getEpicById(int id) {
-        return Optional.ofNullable(epics.get(id))
-                .map(epic -> {
-                    historyManager.add(epic);
-                    return epic;
-                });
+    public Epic getEpicById(int id) {
+        Epic epic = epics.get(id);
+        if (epic != null) {
+            historyManager.add(epic);
+        }
+        return epic;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addTask(Task task) {
-        if (task.getStartTime() != null && hasTimeOverlap(task)) { // Добавление проверки по пересечению задач
+        if (hasTimeOverlap(task)) { // Добавление проверки по пересечению задач
             throw new TimeConflictException("Задача пересекается по времени с существующей.");
         }
         task.setId(generateId()); // Автоматическая установка уникального идентификатора
@@ -115,7 +115,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void addSubtask(Subtask subtask) {
-        if (subtask.getStartTime() != null && hasTimeOverlap(subtask)) {
+        if (hasTimeOverlap(subtask)) {
             throw new TimeConflictException("Подзадача пересекается по времени");
         }
         subtask.setId(generateId()); // Автоматическая установка уникального идентификатора
@@ -127,6 +127,9 @@ public class InMemoryTaskManager implements TaskManager {
         if (epic != null) { // Если эпик существует
             epic.addSubtask(subtask.getId()); // Добавление подзадачи в список подзадач у эпика
             updateEpicStatus(subtask.getEpicId()); // Обновление статуса эпика
+        }
+        if (subtask.getStartTime() != null) {
+            prioritizedTasks.add(subtask);
         }
     }
 
@@ -165,7 +168,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
-        if (task.getStartTime() != null && hasTimeOverlap(task)) {
+        if (hasTimeOverlap(task)) {
             throw new TimeConflictException("Задача пересекается по времени с существующей.");
         }
         prioritizedTasks.remove(task);
@@ -177,13 +180,20 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateSubtask(Subtask subtask) {
-        if (subtask.getStartTime() != null && hasTimeOverlap(subtask)) {
-            throw new TimeConflictException("Подзадача пересекается по времени");
+        Subtask old = subtasks.get(subtask.getId());
+        if (old != null && !old.equals(subtask)) {
+            if (hasTimeOverlap(subtask)) { // Проверка только если задача реально изменилась
+                throw new TimeConflictException("Подзадача пересекается по времени");
+            }
         }
         subtasks.put(subtask.getId(), subtask);
         Epic epic = epics.get(subtask.getEpicId());
         if (epic != null) {
             updateEpicStatus(epic.getId());
+        }
+        prioritizedTasks.remove(subtask);
+        if (subtask.getStartTime() !=null) {
+            prioritizedTasks.add(subtask);
         }
     }
 
@@ -248,7 +258,6 @@ public class InMemoryTaskManager implements TaskManager {
             return false;
         }
         return prioritizedTasks.stream()
-                .filter(task -> task.getStartTime() != null)
                 .anyMatch(existingTask -> existingTask.isOverlapping(newTask));
     }
 

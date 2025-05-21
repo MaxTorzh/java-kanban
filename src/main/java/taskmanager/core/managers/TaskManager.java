@@ -17,11 +17,11 @@ public interface TaskManager {
 
     void deleteAllEpics();
 
-    Optional<Task> getTaskById(int id);
+    Task getTaskById(int id);
 
-    Optional<Subtask> getSubtaskById(int id);
+    Subtask getSubtaskById(int id);
 
-    Optional<Epic> getEpicById(int id);
+    Epic getEpicById(int id);
 
     List<Task> getHistory();
 
