@@ -192,7 +192,7 @@ public class InMemoryTaskManager implements TaskManager {
             updateEpicStatus(epic.getId());
         }
         prioritizedTasks.remove(subtask);
-        if (subtask.getStartTime() !=null) {
+        if (subtask.getStartTime() != null) {
             prioritizedTasks.add(subtask);
         }
     }
