@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
  * <p>
  * Наследники должны реализовать свою логику обработки запросов в методе {@link HttpHandler#handle}.
  */
-public abstract class BaseHttpHandler {
+public abstract class BaseHttpHandler implements HttpHandler {
     protected final TaskManager taskManager;
 
     /**
@@ -96,6 +96,17 @@ public abstract class BaseHttpHandler {
     protected void sendCreated(HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(201, -1);
         exchange.close();
+    }
+
+    /**
+     * Извлекает ID задачи из пути запроса.
+     *
+     * @param path путь запроса (например "/tasks/1")
+     * @return числовой ID задачи
+     */
+    protected int extractIdFromPath(String path) {
+        String[] parts = path.split("/");
+        return Integer.parseInt(parts[2]);
     }
 
     /**
