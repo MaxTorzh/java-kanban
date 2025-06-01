@@ -2,7 +2,6 @@ package taskmanager.server.utils;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.platform.commons.logging.LoggerFactory;
 import taskmanager.core.managers.TaskManager;
 import taskmanager.core.util.Managers;
 import taskmanager.server.handlers.*;

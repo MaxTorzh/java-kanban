@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpExchange;
 import taskmanager.core.managers.TaskManager;
 
 import java.io.IOException;
-import java.rmi.ServerError;
 
 /**
  * Обработчик HTTP-запросов для получения отсортированного списка задач по приоритету.
