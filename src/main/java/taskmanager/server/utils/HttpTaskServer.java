@@ -92,6 +92,15 @@ public class HttpTaskServer {
         }
     }
 
+    /**
+     * Возвращение экземпляра Gson для сериализации/десериализации JSON.
+     *
+     * @return экземпляр Gson
+     */
+    public static Gson getGson() {
+        return new Gson();
+    }
+
     public static void main(String[] args) throws IOException {
         TaskManager taskManager = Managers.getDefault();
         HttpTaskServer server = new HttpTaskServer(taskManager);
