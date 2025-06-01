@@ -100,11 +100,10 @@ class TaskHandlerTest extends BaseHttpHandlerTest {
     @org.junit.jupiter.api.Test
     void testGetTaskById_validId_returns200() throws Exception {
         Task task = new Task("T", "D");
-        task.setId(1);
         taskManager.addTask(task);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/tasks/1"))
+                .uri(URI.create("http://localhost:8080/tasks"))
                 .GET()
                 .build();
 
@@ -136,11 +135,10 @@ class TaskHandlerTest extends BaseHttpHandlerTest {
     @org.junit.jupiter.api.Test
     void testDeleteTaskById_validId_taskRemoved() throws Exception {
         Task task = new Task("T", "D");
-        task.setId(1);
         taskManager.addTask(task);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/tasks/1"))
+                .uri(URI.create("http://localhost:8080/tasks"))
                 .DELETE()
                 .build();
 

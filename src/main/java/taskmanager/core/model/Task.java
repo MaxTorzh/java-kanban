@@ -14,9 +14,9 @@ public class Task {
     private Status status;
     private long durationInSeconds;
     private String startTimeStr;
-
     private transient LocalDateTime startTime;
     private transient Duration duration;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public Task(String title, String description, Status status, Duration duration, LocalDateTime startTime) {
         this.title = title;
@@ -121,7 +121,7 @@ public class Task {
                 !task.getEndTime().isBefore(this.startTime);
     }
 
-    private void syncTransientFields() {
+    protected void syncTransientFields() {
         if (startTime != null) {
             this.startTimeStr = formatDateTime(startTime);
         }
@@ -129,8 +129,6 @@ public class Task {
             this.durationInSeconds = duration.getSeconds();
         }
     }
-
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private static String formatDateTime(LocalDateTime dateTime) {
         return (dateTime != null) ? dateTime.format(FORMATTER) : null;
