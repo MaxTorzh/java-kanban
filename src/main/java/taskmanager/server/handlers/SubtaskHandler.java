@@ -109,7 +109,7 @@ public class SubtaskHandler extends BaseHttpHandler {
      */
     private void handleDelete(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (path.equals("/subtask")) {
+        if (path.equals("/subtasks")) {
             taskManager.deleteAllSubtasks();
             sendSuccess(exchange, "Все подзадачи удалены.");
         } else {

@@ -105,7 +105,7 @@ public class TaskHandler extends BaseHttpHandler {
      */
     private void handleDelete(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (path.equals("/task")) {
+        if (path.equals("/tasks")) {
             taskManager.deleteAllTasks();
             sendSuccess(exchange, "Все задачи удалены.");
         } else {

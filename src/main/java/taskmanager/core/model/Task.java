@@ -4,6 +4,7 @@ import taskmanager.core.util.Status;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class Task {
@@ -11,8 +12,11 @@ public class Task {
     private String description;
     private int id;
     private Status status;
-    private Duration duration;
-    private LocalDateTime startTime;
+    private long durationInSeconds;
+    private String startTimeStr;
+
+    private transient LocalDateTime startTime;
+    private transient Duration duration;
 
     public Task(String title, String description, Status status, Duration duration, LocalDateTime startTime) {
         this.title = title;
@@ -21,11 +25,13 @@ public class Task {
         this.duration = duration;
         this.startTime = startTime;
         this.id = 0;
+        syncTransientFields();
     }
 
     public Task(String title, String description) {
         this.title = title;
         this.description = description;
+        this.status = Status.NEW;
     }
 
     public LocalDateTime getEndTime() {
@@ -35,12 +41,31 @@ public class Task {
         return startTime.plus(duration);
     }
 
+    public long getDurationInSeconds() {
+        return durationInSeconds;
+    }
+
+    public void setDurationInSeconds(long durationInSeconds) {
+        this.durationInSeconds = durationInSeconds;
+        this.duration = Duration.ofSeconds(durationInSeconds);
+    }
+
+    public String getStartTimeStr() {
+        return startTimeStr;
+    }
+
+    public void setStartTimeStr(String startTimeStr) {
+        this.startTimeStr = startTimeStr;
+        this.startTime = parseDateTime(startTimeStr);
+    }
+
     public Duration getDuration() {
         return duration;
     }
 
     public void setDuration(Duration duration) {
         this.duration = duration;
+        syncTransientFields();
     }
 
     public LocalDateTime getStartTime() {
@@ -49,6 +74,7 @@ public class Task {
 
     public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
+        syncTransientFields();
     }
 
     public String getTitle() {
@@ -93,6 +119,25 @@ public class Task {
         }
         return !this.getEndTime().isBefore(task.startTime) &&
                 !task.getEndTime().isBefore(this.startTime);
+    }
+
+    private void syncTransientFields() {
+        if (startTime != null) {
+            this.startTimeStr = formatDateTime(startTime);
+        }
+        if (duration != null) {
+            this.durationInSeconds = duration.getSeconds();
+        }
+    }
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+    private static String formatDateTime(LocalDateTime dateTime) {
+        return (dateTime != null) ? dateTime.format(FORMATTER) : null;
+    }
+
+    private static LocalDateTime parseDateTime(String str) {
+        return (str != null && !str.isEmpty()) ? LocalDateTime.parse(str, FORMATTER) : null;
     }
 
     @Override
