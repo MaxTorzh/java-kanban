@@ -4,17 +4,66 @@ import taskmanager.core.util.Status;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class Epic extends Task {
     private List<Integer> subtaskIds; // id подзадач, относящихся к epic
-    private LocalDateTime endTime;
+    private transient LocalDateTime startTime;
+    private transient Duration duration;
+    private transient LocalDateTime endTime;
+    private String endTimeStr;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public Epic(String title, String description) {
         super(title, description, Status.NEW, null, null);
         this.subtaskIds = new ArrayList<>(); // Создание списка id подзадач
+    }
+
+    public String getEndTimeStr() {
+        return endTime != null ? endTime.format(FORMATTER) : null;
+    }
+
+    public void setEndTimeStr(String endTimeStr) {
+        this.endTimeStr = endTimeStr;
+        this.endTime = (endTimeStr != null && !endTimeStr.isEmpty())
+                ? LocalDateTime.parse(endTimeStr, FORMATTER)
+                : null;
+    }
+
+    @Override
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    @Override
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+        syncTransientFields();
+    }
+
+    @Override
+    public Duration getDuration() {
+        return duration;
+    }
+
+    @Override
+    public void setDuration(Duration duration) {
+        this.duration = duration;
+        syncTransientFields();
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+        if (endTime != null) {
+            this.endTimeStr = endTime.format(FORMATTER);
+        }
     }
 
     /**
@@ -26,7 +75,7 @@ public class Epic extends Task {
         if (subtasks == null || subtasks.isEmpty()) {
             this.setStartTime(null);
             this.setDuration(null);
-            this.endTime = null;
+            this.setEndTime(null);
             return;
         }
 
@@ -62,15 +111,15 @@ public class Epic extends Task {
     }
 
     public void addSubtask(int subtaskId) {
-        if (subtaskId == this.getId() || subtaskIds.contains(subtaskId)) {
-            return; // Добавление проверки, что подзадача не является текущим эпиком
-        }
-        subtaskIds.add(subtaskId);
-    }
+        if (subtaskId == this.getId()) return;
 
-    @Override
-    public LocalDateTime getEndTime() {
-        return endTime;
+        if (subtaskIds == null) {
+            subtaskIds = new ArrayList<>();
+        }
+
+        if (!subtaskIds.contains(subtaskId)) {
+            subtaskIds.add(subtaskId);
+        }
     }
 
     @Override
@@ -89,5 +138,15 @@ public class Epic extends Task {
                 ", " + super.toString() +
                 "subtasksIds=" + subtaskIds + // Вывод списка id подзадач
                 '}';
+    }
+
+    protected void syncTransientFields() {
+        super.syncTransientFields();
+
+        if (endTime != null) {
+            this.endTimeStr = endTime.format(FORMATTER);
+        } else {
+            this.endTimeStr = null;
+        }
     }
 }
