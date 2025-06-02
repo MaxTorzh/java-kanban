@@ -111,10 +111,15 @@ public class Epic extends Task {
     }
 
     public void addSubtask(int subtaskId) {
-        if (subtaskId == this.getId() || subtaskIds.contains(subtaskId)) {
-            return; // Добавление проверки, что подзадача не является текущим эпиком
+        if (subtaskId == this.getId()) return;
+
+        if (subtaskIds == null) {
+            subtaskIds = new ArrayList<>();
         }
-        subtaskIds.add(subtaskId);
+
+        if (!subtaskIds.contains(subtaskId)) {
+            subtaskIds.add(subtaskId);
+        }
     }
 
     @Override
